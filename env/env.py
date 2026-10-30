@@ -177,7 +177,9 @@ class Env:
     def _out(self, edge):
         q, cap = self._lane_stats(edge)
         occ, room = sum(q), sum(q) + sum(cap)
-        fill = occ / max(1, room)
+        # `room` is occ + FREE space, so dividing by it caps fill at 0.5. The spill
+        # thresholds are stated as a fraction of capacity, so divide by capacity.
+        fill = occ / max(1, room - occ)
         return C.OutLink(edge, occ, room, 2 if fill >= SPILL_FULL else 1 if fill >= SPILL_TIGHT else 0)
 
     def eligible(self, j):
