@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<net version="1.20" junctionCornerDetail="5" limitTurnSpeed="5.50">
+  <edge id="ab" from="a" to="b" priority="1" numLanes="2" speed="13.89"/>
+  <edge id="ba" from="b" to="a" priority="1" numLanes="2" speed="13.89"/>
+  <junction id="a" type="priority" x="0" y="0" incLanes="ba_0 ba_1" intLanes="" shape="0,0 0,0 0,0"/>
+  <junction id="b" type="priority" x="500" y="0" incLanes="ab_0 ab_1" intLanes="" shape="500,0 500,0 500,0"/>
+  <connection from="ab" to="ba" fromLane="0" toLane="0"/>
+  <connection from="ba" to="ab" fromLane="0" toLane="0"/>
+</net>

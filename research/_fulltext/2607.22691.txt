@@ -1,0 +1,652 @@
+ 
+ [2607.22691] HiLLTS: Zero-Shot Hierarchical LLM-Guided Traffic Signal Control for Sustainable Transportation 
+ HiLLTS: Zero-Shot Hierarchical LLM-Guided Traffic Signal Control for Sustainable Transportation 
+ Yue Ding
+ Tendai Mukande
+ Mingming Liu
+ Thanks:  Y. Ding is with the Research Ireland Centre for Researching Training in Machine Learning at Dublin City University. T. Mukande and M. Liu are with the Insight Research Ireland Centre for Data Analytics and the School of Electronic Engineering, Dublin City University. This research is supported by Taighde Éireann - Research Ireland under Grant SFI/12/RC/2289_P2 (Insight Research Ireland Centre for Data Analytics) and Grant 18/CRT/6183 Research Ireland Centre for Research Training in Machine Learning (ML-LABS). Corresponding author: Mingming Liu. Email: mingming.liu@dcu.ie . 
+ Abstract 
+ Urban traffic congestion significantly increases fuel consumption, greenhouse gas emissions, and commuter delays, resulting in substantial economic losses and environmental harm in modern cities. Traditional traffic signal control strategies such as fixed-time scheduling, actuated control, and reinforcement learning (RL)-based methods, offer different degrees of adaptability; however, RL-based methods can require extensive retraining, careful reward design, and substantial simulation data when transferred across networks or demand regimes. To address these challenges, we propose HiLLTS, an LLM-guided traffic signal control framework that employs a hierarchical three-layer architecture consisting of a central coordination agent, a district layer and multiple cluster-level intersection agents. Experimental results demonstrate consistent improvements in both
+congestion and environmental performance. Compared with the strongest
+non-LLM baseline in each scenario, HiLLTS reduces average waiting
+time by 36.73% under the low-congestion scenario and 14.71% under
+the high-congestion scenario, while reducing average CO 2 emissions
+by 7.87% and 8.57%, respectively. Larger gains are observed against
+weaker baselines: under low congestion, HiLLTS achieves reductions of
+up to 18.00% in emissions and 62.07% in waiting time relative to
+Fixed-Time control; under high congestion, reductions of up to 28.89%
+in emissions and 40.36% in waiting time are observed relative to Max
+Pressure. The ablation study further validates the contribution of
+LLM-guided coordination over rule-based control. 
+ I Introduction 
+ Urban transportation systems around the world are increasingly strained by population growth and increasing vehicle ownership. As traffic demand approaches or exceeds infrastructure capacity, cities experience persistent congestion, with longer travel times resulting in higher carbon dioxide emissions. These impacts impose substantial economic costs through productivity losses and wasted energy, while also contributing to environmental degradation and public health concerns [ 13 ] . Inefficient signal timing can lead to queue spills, stop-and-go driving, and increased emissions. In contrast, adaptive coordination strategies can significantly reduce delays and improve overall network efficiency without requiring additional infrastructure [ 9 ] . 
+ To improve adaptability in dynamic traffic conditions, AI models such as RL have been adopted to optimise signal control policies [ 7 ] . By learning from real-time state transitions and reward feedback, RL-based methods enable data-driven and context-aware decision-making. More recently, large language models (LLMs) have also emerged as a promising paradigm in intelligent transportation systems, offering advanced reasoning capabilities and processing heterogeneous information [ 6 ] . This shift opens new opportunities for integrating automated reasoning with traffic control, potentially overcoming the limitations of existing methods. For example, [ 19 ] applies LLMs to offline signal optimization, while [ 28 ] and [ 17 ] validate real-time control at single intersections. Extensions to grid-based multi-intersection networks are presented in [ 14 , 22 ] . Despite these advances, several limitations remain. Firstly, most existing studies evaluate their methods in simulated grid networks that do not capture the complexity of roads in the real-world, thus limiting the generalisability of their findings [ 1 ] . In addition, previous research has focused primarily on reducing congestion and minimising travel delays. However, the environmental impact of such driving patterns has received relatively limited attention [ 26 ] . 
+ To address these challenges, we propose HiLLTS, an LLM-guided hierarchical signal control framework that integrates global traffic coordination with local responsiveness, without requiring costly infrastructure modifications. We argue that reducing carbon emissions is imperative given the increasing global emphasis on sustainable urban mobility and climate-conscious transportation planning. Therefore, HiLLTS is designed to operate efficiently without retraining the LLM, minimising additional computational overhead and associated environmental impact. HiLLTS adopts a three-layer architecture. At the city level, an LLM-guided agent periodically analyzes traffic conditions throughout the network and issues coordination directives to each district. At the district level, cluster metrics are aggregated, and city-level parameters are broadcast to all clusters within the district. At the cluster level, each cluster controller executes actuated gap-detection at every simulation step while overlaying city-directed coordination. The framework is evaluated on the Dublin City Centre (DCC) map, comprising 434 traffic lights organised into 5 districts and 176 clusters. The topology reflects the structural complexity of real urban traffic systems, more structurally realistic than synthetic grid networks. Experimental results demonstrate that HiLLTS reduces both travel time and carbon dioxide emissions, compared to the three baseline models. Although the results are promising, the evaluation remains simulation-based and further validation is required before drawing conclusions about real-world deployment. Our main contributions are summarised as follows: 
+ • 
+ We propose a novel hierarchical LLM-guided architecture
+for traffic signal control that requires no training. 
+ • 
+ To the best of our knowledge, this is among the first studies to evaluate zero-shot LLM-guided traffic signal coordination on an irregular city-scale SUMO network derived from real urban topology, showing consistent improvements in congestion mitigation and emission reduction over strong adaptive baselines. 
+ The remainder of this paper is organized as follows. Section II reviews related work on LLM-based traffic signal control and carbon-aware traffic optimization. Section III formulates the hierarchical traffic control problem. Section IV presents the proposed HiLLTS framework. Section V describes the experimental setup. Section VI 
+presents the results and ablation study. Section VII concludes the paper. 
+ II Related Work 
+ In this section, we review relevant work on LLM-based traffic signal control, progressing from smaller to larger experimental scales, and survey work related to carbon emission awareness in traffic control. 
+ II-A Single Intersection LLM-Based Traffic Signal Control 
+ Recent advances in LLMs have opened new avenues for adaptive
+traffic signal control. Early work demonstrated the feasibility of deploying LLMs as single-intersection controllers. [ 28 ] introduced LLM-TrafficBrain, an information-centric framework that integrates semantic reasoning with a closed-loop feedback mechanism. Under Simulation of Urban MObility (SUMO), it demonstrated superior efficiency, reducing average delay and queue length compared to heuristic adaptive methods. [ 17 ] further explored chain-of-thought (CoT) prompting with multiple LLM backends (GPT-4o-mini, Gemini, Llama) at a single four-leg intersection. [ 19 ] conducted a systematic comparison between zero-shot CoT and a novel Generative Critic Agent architecture in SUMO. This actor–critic text-feedback approach demonstrated that structured semantic feedback can reduce delay and increase average speed compared to traditional Fixed-Time control. 
+ II-B Multi-Intersection and Network-Wide LLM Control 
+ Scaling LLM-based control from single intersections to city-scale road networks
+introduces significant coordination challenges. [ 14 ] proposed LLMLight, which formulates traffic signal control as a partially observable Markov Game and employs commonsense-augmented step-by-step reasoning to select signal phases. The scalability of the framework was validated on grid-style urban road networks of varying complexity: from smaller grids in Jinan and Hangzhou to a dense large-scale grid in New York with 196 intersections. By effectively managing these structured networks, LLMLight achieved significant reductions in average travel time, average waiting time, and queue length. Similarly, [ 22 ] proposed an LLM-based RL hybrid framework that predicts congestion bottlenecks, resulting in a reduction in average delay and an increase in throughput using the same map as LLMLight. [ 5 ] proposed an LLM-enhanced Transformer-MAPPO framework across 4–6 junctions, improving average reward and convergence speed over the MAPPO baseline. 
+ II-C Carbon Emission Awareness in Traffic Optimization 
+ Despite significant progress in LLM-based signal control, carbon emission reduction remains an underexplored objective. Existing work primarily optimises throughput, average travel time, and queue length, with only implicit environmental benefits arising from reduced idling. [ 2 ] proposed a city-level generative AI framework that combines multi-modal sensor fusion with LLM semantic reasoning for vehicle behavior modeling, achieving a normalised risk score of 0.910, but stops short of direct emission quantification. [ 20 ] integrated LLM-based replanning agents into MATSim to optimise electric vehicle charging in Montreal, demonstrating the applicability of LLM in emission-sensitive mobility scenarios. A comprehensive survey by [ 29 ] further confirms that carbon-aware traffic signal control remains an open problem, with most LLM-based methods lacking explicit emission feedback mechanisms. This gap motivates the design of our emission-aware formulation and real-world SUMO-based evaluation. 
+ III Problem Formulation 
+ We model the urban road network as a directed graph 𝒢 = ( 𝒱 , ℰ ) \mathcal{G}=(\mathcal{V},\mathcal{E}) , where 𝒱 \mathcal{V} denotes the set of intersections and ℰ \mathcal{E} denotes the set of road segments connecting them. A subset ℒ ⊆ 𝒱 \mathcal{L}\subseteq\mathcal{V} represents signalised intersections, which are grouped into clusters 𝒞 \mathcal{C} , where each cluster is managed by a cluster controller. The full network is organised into a three-level hierarchy: city-level, district-level, and cluster-level which is constructed through the following three-stage pipeline: 
+ 1) Geographic District Partitioning: The | ℒ | |\mathcal{L}| signalised intersections are partitioned into K K geographic districts. Each intersection l i ∈ ℒ l_{i}\in\mathcal{L} has a geographic coordinate ( x i , y i ) (x_{i},y_{i}) . Using K K -means clustering [ 18 ] , each intersection is assigned to the district with the nearest centroid.
+The district index k ∗ ​ ( i ) k^{*}(i) assigned to intersection l i l_{i} is: 
+ k ∗ ​ ( l i ) = arg ⁡ min k ∈ { 1 , … , K } ⁡ ‖ ( x i , y i ) − 𝝁 k ‖ 2 k^{*}(l_{i})=\arg\min_{k\in\{1,\ldots,K\}}\left\|(x_{i},y_{i})-\boldsymbol{\mu}_{k}\right\|^{2} 
+ (1) 
+ where 𝝁 k ∈ ℝ 2 \boldsymbol{\mu}_{k}\in\mathbb{R}^{2} is the centroid of district k k , computed as the mean coordinate of all intersections assigned to it. This yields a partition { 𝒟 1 , 𝒟 2 , … , 𝒟 K } \{\mathcal{D}_{1},\mathcal{D}_{2},\ldots,\mathcal{D}_{K}\} of ℒ \mathcal{L} , where each district 𝒟 k ⊆ ℒ \mathcal{D}_{k}\subseteq\mathcal{L} groups geographically proximate intersections. 
+ 2) Topological Cluster Partitioning: Within each district 𝒟 k \mathcal{D}_{k} , a road connectivity graph G k = ( V k , E k ) G_{k}=(V_{k},E_{k}) is constructed, where nodes are signalised intersections and edges are direct road links between them, weighted by the number of lanes. The Louvain community detection algorithm [ 3 ] is then applied to G k G_{k} to identify fine-grained clusters { 𝒞 k , 1 , 𝒞 k , 2 , … } \{\mathcal{C}_{k,1},\mathcal{C}_{k,2},\ldots\} , maximising modularity: 
+ Q = 1 2 ​ | E k | ​ ∑ i , j [ w i ​ j − d i ​ d j 2 ​ | E k | ] ​ δ ​ ( c i , c j ) Q=\frac{1}{2|E_{k}|}\sum_{i,j}\left[w_{ij}-\frac{d_{i}d_{j}}{2|E_{k}|}\right]\delta(c_{i},c_{j}) 
+ (2) 
+ where w i ​ j w_{ij} is the edge weight (lane count), and d i = ∑ j w i ​ j d_{i}=\sum_{j}w_{ij} 
+is the weighted degree of intersection i i , and δ ⁡ ( c i , c j ) = 1 \delta(c_{i},c_{j})=1 if intersections i i and j j belong to the same community. This ensures that clusters reflect genuine topological connectivity rather than purely spatial proximity. 
+ 3) District and City Topology Aggregation: District-level topology is built by merging the connectivity of all clusters within a district. Connections between clusters are labelled as internal if both endpoints belong to the same district, or external if they cross district boundaries. External links are used to identify adjacent districts. At the city level, all inter-district connections are aggregated into a single graph, and districts in the top third by bottleneck ratio are marked as core districts , indicating areas with the most structural congestion risk. A bottleneck is an intersection with limited outflow capacity. A cluster is designated a bottleneck cluster if it contains at least one such intersection. This city-level graph is passed to the LLM agent for global coordination decisions. 
+ III-A Hierarchical Decision Problem 
+ The control objective is to improve overall network
+performance in terms of congestion and environmental
+impact. Rather than optimising a fixed mathematical
+objective, the city-level LLM agent is instructed to
+minimise vehicle delay and associated emissions across
+the urban road network, and determines coordination
+directives through structured natural language reasoning
+based on observed district conditions. The overall control problem is decomposed into three hierarchical levels. At the city level, at time t , an LLM-guided agent π city \pi_{\text{city}} observes aggregated district-level statistics 𝐬 d ​ ( t ) \mathbf{s}_{d}(t) , including weighted average waiting time and total CO 2 and produces coordination directives 𝐚 d ​ ( t ) \mathbf{a}_{d}(t) for each district: 
+ 𝐚 d ​ ( t ) = π city ​ ( { 𝐬 d ​ ( t ) } d = 1 D , t ) \mathbf{a}_{d}(t)=\pi_{\text{city}}\bigl(\{\mathbf{s}_{d}(t)\}_{d=1}^{D},\;t\bigr) 
+ (3) 
+ At each signalised intersection l ∈ ℒ l\in\mathcal{L} , the cluster
+controller selects a signal action ϕ l ​ ( t ) ∈ { HOLD , SWITCH } \phi_{l}(t)\in\{\texttt{HOLD},\texttt{SWITCH}\} at every simulation step Δ ​ t \Delta t .
+The cluster controller π c \pi_{c} combines the city-level directive
+ 𝐚 d ​ ( t ) \mathbf{a}_{d}(t) with the local intersection state 𝐬 l ​ ( t ) \mathbf{s}_{l}(t) 
+to produce a signal action: 
+ ϕ l ​ ( t ) = π c ​ ( 𝐬 l ​ ( t ) , 𝐚 d ​ ( t ) ) , ∀ l ∈ c \phi_{l}(t)=\pi_{c}\bigl(\mathbf{s}_{l}(t),\;\mathbf{a}_{d}(t)\bigr),\quad\forall\,l\in c 
+ (4) 
+ where 𝐬 l ​ ( t ) \mathbf{s}_{l}(t) includes the current phase, time-in-phase
+ τ l ​ ( t ) \tau_{l}(t) , queue length, gap since last vehicle, and downstream
+occupancy at intersection l l . The time spent in the current phase
+is subject to minimum and maximum green time constraints: 
+ g l min ≤ τ l ​ ( t ) ≤ g l max g^{\min}_{l}\leq\tau_{l}(t)\leq g^{\max}_{l} 
+ (5) 
+ where g l min g^{\min}_{l} and g l max g^{\max}_{l} are the minimum and maximum
+green time for intersection l l . 
+ IV Hierarchical LLM Framework 
+ Fig. 1: Three-layer LLM-coordinated traffic signal control framework. 
+ IV-A Framework Overview 
+ The proposed framework comprises three hierarchical layers shown in Fig.  1 : a city-level LLM agent issues strategic directives based on aggregated network conditions; a district-level layer distributes these to relevant clusters; and cluster-level controllers prioritize active directives, falling back to actuated logic otherwise. Information flows bidirectionally, closing the loop between global reasoning and local execution. 
+ IV-B City-Level Agent 
+ The city-level agent π city \pi_{\text{city}} is responsible for
+monitoring city-wide traffic conditions and issuing coordination
+directives to all districts at dynamic decision interval.
+At each invocation, the agent follows a three-step process. First,
+raw metrics reported from the cluster level (per-district
+CO 2 and weighted average waiting time) are processed
+internally to derive two additional inputs: a diagnosis 
+label per district (e.g., IDLING_CONGESTION ,
+ STOP_AND_GO , HEALTHY ) obtained by thresholding
+both metrics, and trend indicators classifying each district
+as improving , stable , or worsening by
+comparing against the previous interval. Second, these inputs are
+assembled with the city topology and simulation time into a structured
+prompt, which is passed to the LLM via API. Third, the LLM returns
+a structured JSON response specifying, for each district, a
+coordination mode m d ∈ { NORMAL , RESTRICT , GREEN_WAVE } m_{d}\in\{\texttt{NORMAL},\texttt{RESTRICT},\texttt{GREEN\_WAVE}\} , a metering rate ρ d \rho_{d} , a target cycle
+length T d T_{d} , and a phase offset δ d \delta_{d} , along with any
+cross-district coordination actions. 
+ Prompt Engineering: 
+The city-level agent adopts a structured zero-shot prompt [ 4 ] that contains no input-output demonstrations of the coordination task, as illustrated in Fig.  1 . The prompt consists of four sections: role and objective, current district state, trend indicators, and coordination principles. Role prompting frames the LLM as a
+ City Traffic Coordination Strategist with the explicit
+objective of minimising vehicle delay and associated emissions
+across the urban road network. The prompt enforces a strict JSON
+output schema with enumerated field values. The coordination principles instruct the LLM to assign one of three modes to each district via district_guidance : 
+ • 
+ NORMAL : assigned to healthy districts with
+ ρ d = 1.0 \rho_{d}=1.0 , imposing no intervention. Cluster controllers
+operate purely on local actuated logic. 
+ • 
+ RESTRICT : assigned to a district exhibiting
+congestion or high emission, applying intra-district metering
+with ρ d ∈ ( 0 , 1 ) \rho_{d}\in(0,1) proportional to congestion severity. 
+ • 
+ GREEN_WAVE : issued when the agent identifies
+potential for progressive vehicle flow along connected clusters
+within a district, specifying a shared cycle length T T and
+offsets { δ 1 , δ 2 , … } \{\delta_{1},\delta_{2},\ldots\} to allow platoons to
+progress through consecutive intersections without stopping [ 15 ] . 
+ When congestion risk is detected as spreading across district
+boundaries, the LLM escalates to cross-district coordination by
+issuing additional actions via the coordination array: 
+ • 
+ SPILLBACK_CONTROL : triggered when a downstream
+district 𝒟 d \mathcal{D}_{d} is congested and worsening. The LLM
+identifies the upstream district 𝒟 u \mathcal{D}_{u} feeding into
+ 𝒟 d \mathcal{D}_{d} and assigns m d = RESTRICT m_{d}=\texttt{RESTRICT} with
+ ρ d ∈ ( 0 , 1 ) \rho_{d}\in(0,1) , reducing inflow to prevent spillback
+propagation. 
+ • 
+ GREEN_WAVE (cross-district): issued when a
+corridor spans multiple districts, specifying an ordered list
+of cluster identifiers { c 1 , c 2 , … } \{c_{1},c_{2},\ldots\} with a shared
+cycle length T T and offsets { δ 1 , δ 2 , … } \{\delta_{1},\delta_{2},\ldots\} 
+to coordinate platoon progression across district boundaries. 
+ IV-C District-Level Aggregation 
+ The district layer serves as an intermediary between global strategy and local execution. At each city-agent invocation, cluster-level metrics are aggregated into a district-level report that captures both typical load and tail congestion conditions, along with total CO 2 emissions. This aggregation is designed to ensure that localised hotspots within a district are not obscured by averaging across clusters. The resulting reports are passed to the city agent, and upon receiving coordination directives, the district layer broadcasts the corresponding parameters to all constituent clusters. 
+ IV-D Cluster-Level Control 
+ At cluster level, each controller π c \pi_{c} manages a group of intersections and
+executes one decision per simulation step Δ ​ t \Delta t . The base logic is a
+reactive signal control policy, upon which city-level strategy is overlaid
+with higher priority. 
+ IV-D 1 Reactive Signal Control 
+ At each step, π c \pi_{c} evaluates four ordered rules per intersection: 
+ • 
+ Downstream blockage: Hold if downstream segment
+occupancy exceeds a threshold. 
+ • 
+ Gap detection: Switch if the measured headway on
+the green approach exceeds 
+ h max = min ⁡ ( h upper , max ⁡ ( h lower , ( t r + v 2 ​ a ) ​ α ) ) h_{\max}=\min\!\left(h^{\text{upper}},\,\max\!\left(h^{\text{lower}},\,\left(t_{r}+\frac{v}{2a}\right)\alpha\right)\right) 
+ (6) 
+ where h max h_{\max} is the headway threshold, h upper h^{\text{upper}} and
+ h lower h^{\text{lower}} are its upper and lower bounds, t r t_{r} is driver
+reaction time, v v is mean approach speed, a a is assumed
+deceleration, and α \alpha is a calibration factor  [ 11 ] . 
+ • 
+ Maximum green exceeded: Switch if the current phase
+duration reaches T max T^{\max} while queues remain on red-phase
+approaches, preventing indefinite green extension under
+sustained demand. 
+ • 
+ Green-empty override: Switch if all lanes on the
+current green phase are empty while one or more red-phase
+approaches have waiting vehicles, avoiding unnecessary green
+time on a cleared approach. 
+ IV-D 2 Strategy Overlay 
+ City-level directives override the base policy before rule evaluation: 
+ • 
+ RESTRICT: Each switch decision is stochastically suppressed: with probability
+ ( 1 − ρ u ) (1-\rho_{u}) the phase is held regardless of gap or queue state, reducing cluster throughput
+by factor ρ u \rho_{u} . 
+ • 
+ GREEN_WAVE: When the cycle position falls within the switching window
+ [ δ c − ϵ , δ c + ϵ ] [\delta_{c}-\epsilon,\,\delta_{c}+\epsilon] and the minimum green constraint is satisfied,
+a coordinated switch is triggered to align with the assigned platoon arrival pattern. 
+ V Experimental Setup 
+ Vehicle routes are derived from the SCATS traffic dataset [ 12 ] , data collected from 480 sensors in Dublin, the largest city in Ireland. Vehicle departure routes are sampled from this dataset to reflect realistic origin-destination patterns. 
+ V-A Simulation Environment 
+ All experiments are conducted using SUMO on the DCC network, comprising 434 signalised intersections. To partition the network into manageable control regions, we apply K-Means clustering to the geographic coordinates of all signalised junctions. The optimal number of districts is determined via the Elbow Method [ 23 ] : K-Means is run for K = 2 , … , 15 K=2,\ldots,15 , the second-order difference method identifies K = 4 K=4 as the geometric elbow (Fig.  2 ). However, since a 4-district partition places an excessive computational burden on each regional cluster controller given the density of the DCC network, we adopt K = 5 K=5 as a practical compromise, yielding five districts and 176 signal clusters. The simulation step length is set to 0.5 s. Two congestion levels are evaluated: a low-congestion scenario targeting approximately 1,200 vehicles in the network at steady state, and a high-congestion scenario with a total demand of 30,000 vehicles targeting 3,000 simultaneous vehicles. Each experiment is repeated with fixed random seeds for reproducibility. 
+ Fig. 2: Elbow Method on the Dublin traffic network. 
+ V-A 1 Vehicle Types 
+ We model two vehicle classes using the HBEFA3 emission classification standard: passenger cars comprising 80% of traffic, assigned the emission class HBEFA3/PC_G_EU4 , and heavy-duty vehicles comprising the remaining 20%, assigned HBEFA3/HDV_D_EU4 . Both types follow the Intelligent Driver Model for car-following behavior. Traffic demand is composed of background vehicles, which maintain the steady-state congestion level in the simulation, and test vehicles, which are injected after network equilibrium is reached and serve as the evaluation subjects. 
+ V-A 2 Baselines 
+ We compare HiLLTS with three baselines: 
+ • 
+ Fixed-Time control [ 27 ] uses pre-timed signal plans that remain
+static throughout the simulation. The signal plans are automatically generated
+by SUMO based on the OpenStreetMap 1 1 
+ 1 
+ https://www.openstreetmap.org/ road network topology. 
+ • 
+ Actuated control [ 8 ] extends the green phase based on real-time gap detection, representing a strong and practically deployed baseline. 
+ • 
+ Max Pressure control  [ 25 ] is a well-established adaptive strategy that maximises network throughput by balancing queue pressures across competing movements. 
+ V-A 3 LLM Configurations 
+ HiLLTS is evaluated across three model variants, namely Gemini-2.0-Flash, Gemini-3-Flash, and GPT-5 nano, to assess model performance under low and high congestion scenarios with respect to the choice of LLM. 
+ V-A 4 LLM Parameters 
+ All LLMs are queried with the temperature set to 0 to ensure deterministic outputs. To balance computational cost and responsiveness, the city-level agent operates at a dynamic invocation interval adjusted based on the observed network state: 
+ Δ ​ t city = { Δ ​ t critical if  ​ w ¯ > θ critical ​  or city health = CRITICAL Δ ​ t urgent if  ​ w ¯ > θ urgent ​  or city health = WARNING Δ ​ t normal otherwise \Delta t_{\text{city}}=\begin{cases}\Delta t_{\text{critical}}&\text{if }\bar{w}>\theta_{\text{critical}}\text{ or city health}=\texttt{CRITICAL}\\
+\Delta t_{\text{urgent}}&\text{if }\bar{w}>\theta_{\text{urgent}}\text{ or city health}=\texttt{WARNING}\\
+\Delta t_{\text{normal}}&\text{otherwise}\end{cases} 
+ where w ¯ \bar{w} is the current city-wide average waiting time. In our
+implementation, θ critical = 50 \theta_{\text{critical}}=50  s, θ urgent = 30 \theta_{\text{urgent}}=30  s, and Δ ​ t critical = 10 \Delta t_{\text{critical}}=10  s, Δ ​ t urgent = 15 \Delta t_{\text{urgent}}=15  s, Δ ​ t normal = 60 \Delta t_{\text{normal}}=60  s. These thresholds are inspired by the Highway Capacity Manual (HCM) [ 24 ] LOS criteria, where LOS D and LOS E boundaries are defined at 35 35  s and 55 55  s; the conservative values of 30 30  s and 50 50  s are adopted to trigger responses before oversaturation onset [ 21 ] . The 10 10 – 15 15  s update interval during congestion aligns with the phase-adjustment granularity of SCATS [ 16 ] , while the 60 60  s interval reflects the rolling optimization horizon of OPAC [ 10 ] . This allows the LLM to respond
+rapidly during congested periods, while reducing API calls under
+stable conditions. 
+ TABLE I: Performance comparison. The best results are shown in bold. Underlined values indicate the second-best performance. 
+ Scenario 
+ Metric 
+ Model 
+ Fixed-Time 
+ Actuated 
+ Max Pressure 
+ HiLLTS 
+ (Gemini-2.0-Flash) 
+ HiLLTS 
+ (Gemini-3-Flash) 
+ HiLLTS 
+ (GPT-5 nano) 
+ Low congestion 
+ ACE ↓ \downarrow 
+ 1.00 
+ 0.91 
+ 0.89 
+ 0.87 
+ 0.82 
+ 0.83 
+ AWT ↓ \downarrow 
+ 148.04 
+ 106.49 
+ 88.76 
+ 71.72 
+ 56.16 
+ 67.93 
+ ATT 
+ 460.02 
+ 411.00 
+ 394.84 
+ 372.63 
+ 357.44 
+ 364.25 
+ High congestion 
+ ACE ↓ \downarrow 
+ 2.89 
+ 2.45 
+ 3.15 
+ 2.42 
+ 2.24 
+ 2.32 
+ AWT ↓ \downarrow 
+ 1215.46 
+ 953.79 
+ 1363.90 
+ 923.40 
+ 813.46 
+ 884.50 
+ ATT ↓ \downarrow 
+ 1674.62 
+ 1379.05 
+ 1832.41 
+ 1371.11 
+ 1258.34 
+ 1320.96 
+ Fig. 3: CDF of per-vehicle travel metrics under low-congestion conditions. HiLLTS (Gemini-3-Flash) outperforms the Max Pressure baseline across all four metrics, with the most pronounced gains in waiting time and average moving speed. 
+ Fig. 4: CDF of per-vehicle travel metrics under high-congestion conditions. HiLLTS (Gemini-3-Flash) substantially reduces extreme travel and waiting times compared to the Actuated baseline. 
+ V-A 5 Evaluation Metrics 
+ All metrics are measured exclusively over the 100 test vehicles
+injected after the background traffic has reached a stable level, and background traffic serves solely to establish realistic congestion levels without confounding the evaluation. 
+ • 
+ Average CO 2 Emissions (ACE): Average cumulative CO 2 emissions (kg) produced by test vehicles over the entire simulation, computed using the HBEFA3 emission model embedded in SUMO. 
+ • 
+ Average Waiting Time (AWT): Average cumulative time (s)
+spent stationary across all test vehicles throughout
+their entire routes. This metric captures both signal-induced delay and
+congestion-induced queuing, as a direct measure of overall
+intersection-level control quality. 
+ • 
+ Average Travel Time (ATT): Average end-to-end travel time(s) of all test vehicles from the origin to the destination, which includes both waiting time and any propagated delays due to congestion throughout the network. 
+ VI Results 
+ In this section, we present the experimental results under different congestion levels, along with an ablation study, to demonstrate the effectiveness of HiLLTS. 
+ VI-A Low Congestion Scenario 
+ In the low-congestion setting, all three variants of the HiLLTS model consistently outperform all
+baselines on all three metrics, as shown in Table  I . The Gemini-3-Flash variant yields the strongest overall performance,
+achieving the largest reductions across all baselines, most notably 18.00% in ACE,
+62.07% in AWT, and 22.30% in ATT relative to Fixed-Time
+control, and 9.89%, 47.26%, and 13.03% over Actuated control. The Gemini-2.0-Flash
+variant achieves reductions of 13.00% in ACE, 51.56% in AWT,
+and 19.00% in ATT compared to Fixed-Time control. Against the Actuated
+baseline, improvements of 4.40%, 32.65%, and 9.34% are observed for ACE, AWT,
+and ATT, respectively. Gains over Max Pressure further confirm the
+advantage of the proposed architecture over classical adaptive control. The GPT-5 nano variant
+also improves on all baselines, with reductions of 17.00%, 54.12%, and 20.82% in ACE,
+AWT, and ATT versus Fixed-Time. 
+ VI-A 1 Computational Overhead Under Low Congestion 
+ Under low congestion, the City Agent (powered by Gemini-3-Flash )
+was invoked 73 times over a 1720.0 s simulation, yielding a
+mean invocation interval of 23.6 s. This interval falls
+between the 15 s and 60 s
+thresholds, indicating moderate traffic fluctuations throughout the run.
+The mean API response time of approximately 3.5 s per invocation is
+negligible relative to the city-level decision interval,
+and well within the phase durations of typical urban signal cycles, suggesting that LLM-guided strategic control may be feasible in simulation, though real-world deployment would require asynchronous execution and robust fallback control. The API cost for the low-congestion scenario was $0.62 USD (73 invocations, mean 2000 input and 2500 output tokens per call). 
+ VI-A 2 Per-Vehicle Variability Analysis 
+ To assess how HiLLTS affects individual vehicle experience under
+low-congestion conditions, we analyze the per-vehicle Cumulative
+Distribution Function (CDF) distributions of travel time, waiting
+time, average moving speed, and stop count in Fig.  3 .
+Despite the relatively uncongested network, HiLLTS yields consistent
+improvements over the best baseline, Max Pressure, across all four
+metrics. The 95th-percentile waiting time decreases from 648 s
+under Max Pressure to 299 s under HiLLTS, a reduction of 53.86%,
+and the 95th-percentile travel time decreases from 705 s to 659 s.
+Average moving speed is marginally higher and per-vehicle stop counts
+are reduced under HiLLTS. These results suggest that HiLLTS improves individual vehicle
+efficiency even under light network load. 
+ VI-B High Congestion Scenario 
+ In the high-congestion setting, all three HiLLTS variants consistently outperform all baselines
+again across all metrics (Table  I ). Gemini-3-Flash achieves the largest
+improvements, reducing ACE by 22.49%, AWT by 33.07%, and ATT by 24.86% compared
+to Fixed-Time control. It further outperforms Max Pressure by 28.89%, 40.36%, and
+31.33% on ACE, AWT, and ATT respectively, and improves over Actuated control by 8.57%,
+14.71%, and 8.75%. GPT-5 nano ranks second, with reductions of 19.72%, 27.23%,
+and 21.12% in ACE, AWT, and ATT versus Fixed-Time, and 26.35%, 35.15%, and
+27.91% over Max Pressure. Gemini-2.0-Flash demonstrates more modest gains under high
+congestion: 16.26%, 24.03%, and 18.12% in ACE, AWT, and ATT versus Fixed-Time,
+and exhibits marginal improvements over Actuated baselines. 
+ VI-B 1 Computational Overhead Under High Congestion 
+ Under high congestion, the City Agent was invoked 586 times over a
+6698.5 s simulation, yielding a mean invocation interval of 11.4 s,
+close to the minimum permitted interval of 10 s, reflecting sustained
+near-critical traffic states throughout the run. Compared to the low
+congestion scenario, this represents a 2.1 times increase in
+invocation frequency, demonstrating that the dynamic frequency
+adaptation mechanism responds appropriately to deteriorating conditions.
+Each invocation produced on average 1.26 coordination actions,
+confirming that the architecture remains computationally feasible under
+demanding real-world conditions. The estimated API cost for the high-congestion scenario was approximately $6.89 USD (586 invocations, ∼ \sim 2,500 input / 3,500 output tokens per call). 
+ VI-B 2 Per-Vehicle Variability Analysis 
+ To assess how HiLLTS affects the experience of individual vehicles in high congestion
+conditions, we analyze the CDF distributions per-vehicle of the four metrics in
+Fig.  4 . HiLLTS and the best baseline, Actuated, exhibit similar CDF
+curves in the lower percentiles, but diverge substantially in the upper tail.
+HiLLTS reduces the 95th-percentile travel time from approximately 15,000 s
+to below 7,000 s and compresses the worst-case waiting time by over 47%,
+while also lowering the upper tail of per-vehicle stop counts. These results suggest that HiLLTS primarily suppresses severe congestion episodes rather than improving typical-case performance. 
+ VI-C Statistical Significance 
+ Within each simulation run, paired comparisons of 100
+test vehicles show consistent distributional differences between
+HiLLTS (Gemini-3-Flash) and all baselines (paired t-test, p < 0.05 p<0.05 , n = 100
+vehicles). As all vehicles share the same network and control
+policy within a run, these results should be interpreted as
+indicative rather than inferential across independent trials. Effect sizes range from small to large (Cohen’s d = 0.208 d=0.208 – 1.463 1.463 ), with the strongest effects observed under low congestion against Fixed-Time and Actuated baselines. Under high congestion, GPT-5 nano does not achieve statistical significance over Actuated ( p > 0.28 p>0.28 ), highlighting the advantage of the stronger Gemini-3-Flash backbone in saturated network conditions. Table  II summarises the p p -values and effect sizes for the primary HiLLTS (Gemini-3-Flash) variant. 
+ TABLE II: Statistical significance of HiLLTS (Gemini-3-Flash) improvements (paired t-test, n = 100 n=100 vehicles). 
+ Scenario 
+ Baseline 
+ Metric 
+ p p -value 
+ Cohen’s d d 
+ Low 
+ Fixed-Time 
+ ATT 
+ < < 0.001 
+ 0.876 
+ AWT 
+ < < 0.001 
+ 0.717 
+ ACE 
+ < < 0.001 
+ 0.479 
+ Actuated 
+ ATT 
+ < < 0.001 
+ 1.463 
+ AWT 
+ < < 0.001 
+ 0.881 
+ ACE 
+ 0.001 
+ 0.332 
+ Max Pressure 
+ ATT 
+ < < 0.001 
+ 0.947 
+ AWT 
+ < < 0.001 
+ 0.472 
+ ACE 
+ 0.040 
+ 0.208 
+ High 
+ Fixed-Time 
+ ATT 
+ < < 0.001 
+ 0.395 
+ AWT 
+ < < 0.001 
+ 0.384 
+ ACE 
+ < < 0.001 
+ 0.399 
+ Actuated 
+ ATT 
+ 0.017 
+ 0.244 
+ AWT 
+ 0.013 
+ 0.254 
+ ACE 
+ 0.024 
+ 0.229 
+ Max Pressure 
+ ATT 
+ < < 0.001 
+ 0.614 
+ AWT 
+ < < 0.001 
+ 0.591 
+ ACE 
+ < < 0.001 
+ 0.582 
+ TABLE III: Ablation study on the district-level LLM agent in HiLLTS and rule-based control. Bold indicates best performance. 
+ Scenario 
+ Metric 
+ HiLLTS (Gemini-3-Flash) 
+ Rule-based 
+ City level with LLM only 
+ City + District level with LLM 
+ Low congestion 
+ ACE ↓ \downarrow 
+ 0.82 
+ 1.01 
+ 0.89 
+ AWT ↓ \downarrow 
+ 56.16 
+ 81.94 
+ 79.57 
+ ATT ↓ \downarrow 
+ 357.44 
+ 387.62 
+ 385.00 
+ High congestion 
+ ACE ↓ \downarrow 
+ 2.24 
+ 3.13 
+ 2.46 
+ AWT ↓ \downarrow 
+ 813.46 
+ 1057.05 
+ 959.13 
+ ATT ↓ \downarrow 
+ 1258.34 
+ 1510.74 
+ 1409.60 
+ VI-D Ablation Study 
+ To test whether adding an LLM agent at the district level provides
+additional benefit over the proposed architecture, and to quantify the overall contribution of LLM-guided coordination, we conduct an
+ablation study across three configurations, with results shown in
+Table  III : City LLM only (proposed),
+ City + District LLM (with an additional district-level
+agent), and Rule-based (no LLM baseline).
+The City LLM only configuration achieves the best performance
+across all metrics. Adding a district-level LLM not only fails to
+improve over the city-only architecture but also degrades performance below
+the rule-based baseline, increasing CO 2 , waiting time, and trip
+duration under both scenarios. This validates the design
+choice of a single city-level LLM agent. 
+ VII Conclusion 
+ This work presents HiLLTS, a hierarchical LLM-guided traffic signal control framework in which a city-level LLM agent issues strategic
+coordination directives to constrained local cluster controllers,
+without requiring task-specific training or network-specific retraining. Evaluated on a SUMO network derived from DCC, the framework reduces average waiting time by 36.73% and CO 2 
+emissions by 7.87% under low congestion, and by 14.71% and 8.57%
+respectively under high congestion, compared with the strongest
+non-LLM baseline in each scenario. The results suggest that
+LLM-guided strategic coordination can improve delay and
+SUMO-estimated CO 2 emissions in the evaluated
+simulation scenarios. Future work should validate the framework
+across multiple calibrated networks, broader demand conditions,
+and stronger adaptive and learning-based baselines, and should
+address real-world signal constraints and pedestrian experience. 
+ References 
+ [1] 
+ E. Anthi, L. Williams, H. A. Afzal, B. A. Brar, J. Bhowmick, K. Gujral, and E. Thomas (2025) 
+ The role of artificial intelligence in shaping intelligent motorways: opportunities, challenges, and real-world implementations .
+ IEEE Transactions on Intelligent Transportation Systems .
+ Cited by: §I .
+ [2] 
+ H. Bilal, A. Rehman, M. S. Aslam, I. Ullah, W. Chang, and N. Kumar (2025) 
+ Hybrid TrafficAI: a generative AI framework for real-time traffic simulation and adaptive behavior modeling .
+ IEEE Transactions on Intelligent Transportation Systems .
+ External Links: Document 
+ Cited by: §II-C .
+ [3] 
+ V. D. Blondel, J. Guillaume, R. Lambiotte, and E. Lefebvre (2008) 
+ Fast unfolding of communities in large networks .
+ Journal of statistical mechanics: theory and experiment 2008 ( 10 ), pp. P10008 .
+ Cited by: §III .
+ [4] 
+ T. Brown, B. Mann, N. Ryder, M. Subbiah, J. D. Kaplan, P. Dhariwal, A. Neelakantan, P. Shyam, G. Sastry, A. Askell, et al. (2020) 
+ Language models are few-shot learners .
+ Advances in neural information processing systems 33 , pp. 1877–1901 .
+ Cited by: §IV-B .
+ [5] 
+ X. Chen and W. Meng (2025) 
+ LLM-enhanced marl for smarter traffic control .
+ In 2025 IEEE 19th International Conference on Control & Automation (ICCA) ,
+ pp. 535–540 .
+ Cited by: §II-B .
+ [6] 
+ S. Choi and Y. Lim (2025) 
+ Optimizing traffic signal control using llm-driven reward weight adjustment in reinforcement learning .
+ Journal of Information Processing Systems 21 ( 1 ), pp. 43–51 .
+ Cited by: §I .
+ [7] 
+ T. Chu, J. Wang, L. Codecà, and Z. Li (2019) 
+ Multi-agent deep reinforcement learning for large-scale traffic signal control .
+ IEEE transactions on intelligent transportation systems 21 ( 3 ), pp. 1086–1095 .
+ Cited by: §I .
+ [8] 
+ J. N. Darroch, G. F. Newell, and R. W. J. Morris (1964) 
+ Queues for a vehicle-actuated traffic light .
+ Operations Research 12 ( 6 ), pp. 882–895 .
+ Cited by: 2nd item .
+ [9] 
+ M. Eom and B. Kim (2020) 
+ The traffic signal control problem for intersections: a review .
+ European transport research review 12 ( 1 ), pp. 50 .
+ Cited by: §I .
+ [10] 
+ N. H. Gartner (1983) 
+ OPAC: a demand-responsive strategy for traffic signal control .
+ Transportation Research Record 906 .
+ Cited by: §V-A4 .
+ [11] 
+ D. C. Gazis, R. Herman, and A. Maradudin (1960) 
+ The problem of the amber signal light in traffic flow .
+ Operations Research 8 ( 1 ), pp. 112–132 .
+ External Links: Document 
+ Cited by: 2nd item .
+ [12] 
+ M. Guériau and I. Dusparic (2020) 
+ Quantifying the impact of connected and autonomous vehicles on traffic efficiency and safety in mixed traffic .
+ In 2020 IEEE 23rd International Conference on Intelligent Transportation Systems (ITSC) ,
+ Vol. , pp. 1–8 .
+ External Links: Document 
+ Cited by: §V .
+ [13] 
+ H. Khreis, A. D. May, and M. J. Nieuwenhuijsen (2017) 
+ Health impacts of urban transport policy measures: a guidance note for practice .
+ Journal of Transport & Health 6 , pp. 209–227 .
+ Cited by: §I .
+ [14] 
+ S. Lai, Z. Xu, W. Zhang, H. Liu, and H. Xiong (2025) 
+ LLMLight: large language models as traffic signal control agents .
+ In Proceedings of the 31st ACM SIGKDD Conference on Knowledge Discovery
+and Data Mining (KDD) ,
+ Toronto, Canada .
+ External Links: Document 
+ Cited by: §I ,
+ §II-B .
+ [15] 
+ J. D. Little (1966) 
+ The synchronization of traffic signals by mixed-integer linear programming .
+ Operations Research 14 ( 4 ), pp. 568–594 .
+ Cited by: 3rd item .
+ [16] 
+ P. R. Lowrie (1982) 
+ The Sydney co-ordinated adaptive traffic system: principles, methodology, algorithms .
+ IEE Conf. Road Traffic Signalling .
+ Cited by: §V-A4 .
+ [17] 
+ S. Masri, H. I. Ashqar, and M. Elhenawy (2025) 
+ Large language models (llms) as traffic control systems at urban intersections: a new paradigm .
+ Vehicles 7 ( 1 ), pp. 11 .
+ Cited by: §I ,
+ §II-A .
+ [18] 
+ J. B. McQueen (1967) 
+ Some methods of classification and analysis of multivariate observations .
+ In Proc. of 5th Berkeley Symposium on Math. Stat. and Prob. ,
+ pp. 281–297 .
+ Cited by: §III .
+ [19] 
+ M. Movahedi and J. Choi (2025) 
+ The crossroads of LLM and traffic control: a study on large language models in adaptive traffic signal control .
+ IEEE Transactions on Intelligent Transportation Systems 26 , pp. 1701–1716 .
+ External Links: Document 
+ Cited by: §I ,
+ §II-A .
+ [20] 
+ A. U. Z. Patwary, F. Ciari, L. Angioloni, H. Naseri, L. Brusci, G. Iannelli, and A. Bakhtiari (2024) 
+ Bridging ai and traffic simulation: a robust framework for llm-based ai replanning agents in matsim .
+ Cited by: §II-C .
+ [21] 
+ R. P. Roess, E. S. Prassas, and W. R. McShane (2011) 
+ Traffic engineering .
+ Pearson .
+ Cited by: §V-A4 .
+ [22] 
+ A. R. Singh, M. W. A. Ashraf, R. S. Rathore, B. Li, and M. Sujatha (2025) 
+ Real-time traffic flow optimization using large language models and reinforcement learning for smart urban mobility .
+ Applied Soft Computing , pp. 113917 .
+ Cited by: §I ,
+ §II-B .
+ [23] 
+ R. L. Thorndike (1953) 
+ Who belongs in the family? .
+ Psychometrika 18 ( 4 ), pp. 267–276 .
+ Cited by: §V-A .
+ [24] 
+ Transportation Research Board (2016) 
+ Highway capacity manual 6th edition .
+ TRB .
+ Cited by: §V-A4 .
+ [25] 
+ P. Varaiya (2013) 
+ Max pressure control of a network of signalized intersections .
+ Transportation Research Part C: Emerging Technologies 36 , pp. 177–195 .
+ Cited by: 3rd item .
+ [26] 
+ Z. Wang, L. Xu, and J. Ma (2023) 
+ Carbon dioxide emission reduction-oriented optimal control of traffic signals in mixed traffic flow based on deep reinforcement learning .
+ Sustainability 15 ( 24 ), pp. 16564 .
+ Cited by: §I .
+ [27] 
+ F. V. Webster (1958) 
+ Traffic signal settings .
+ Technical report 
+ Cited by: 1st item .
+ [28] 
+ J. Yan, D. Li, and Q. Yang (2025) 
+ LLM-trafficbrain: an information-centric framework for dynamic signal control with large language models .
+ In 2025 IEEE 26th China Conference on System Simulation Technology and its Applications (CCSSTA) ,
+ pp. 252–256 .
+ Cited by: §I ,
+ §II-A .
+ [29] 
+ Y. Yan, Y. Liao, G. Xu, R. Yao, H. Fan, J. Sun, X. Wang, J. Sprinkle, Z. An, M. Ma, X. Cheng, T. Liu, Z. Ke, B. Zou, M. Barth, and Y. Kuo (2025) 
+ Large language models for traffic and transportation research: methodologies, state of the art, and future opportunities .
+ External Links: 2503.21330 
+ Cited by: §II-C .
+ ◄ 
+ Feeling lucky? 
+ Conversion report 
+ Report an issue 
+ View original on arXiv ► 
+ Copyright 
+ Privacy Policy 
+ Generated by L a T e XML oxide 

@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<routes>
+  <vType id="car" length="5" minGap="2" accel="2.6" decel="4.5" maxSpeed="13.89"/>
+  <flow id="f0" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="4Ei 3Ei"/>
+  </flow>
+  <flow id="f1" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="1Si 1No"/>
+  </flow>
+  <flow id="f2" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="4Ni 5Wi"/>
+  </flow>
+  <flow id="f3" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="2Si 2Eo"/>
+  </flow>
+  <flow id="f4" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="7Si 6Ei"/>
+  </flow>
+  <flow id="f5" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="4Si 1Si"/>
+  </flow>
+  <flow id="f6" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="8Ei 7Ei"/>
+  </flow>
+  <flow id="f7" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="7Ei 4Si"/>
+  </flow>
+  <flow id="f8" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="7Ei 6Ei"/>
+  </flow>
+  <flow id="f9" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="6Wi 7Wi"/>
+  </flow>
+  <flow id="f10" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="4Wi 5Wi"/>
+  </flow>
+  <flow id="f11" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="8Ei 8So"/>
+  </flow>
+  <flow id="f12" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="7Ni 8Wi"/>
+  </flow>
+  <flow id="f13" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="1Ni 0Ei"/>
+  </flow>
+  <flow id="f14" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="5Ei 8Ni"/>
+  </flow>
+  <flow id="f15" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="2Wi 2Eo"/>
+  </flow>
+  <flow id="f16" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="2Ni 2Eo"/>
+  </flow>
+  <flow id="f17" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="3Si 4Wi"/>
+  </flow>
+  <flow id="f18" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="7Wi 7So"/>
+  </flow>
+  <flow id="f19" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="0Wi 0No"/>
+  </flow>
+  <flow id="f20" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="2Ni 1Ei"/>
+  </flow>
+  <flow id="f21" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="0Wi 1Wi"/>
+  </flow>
+  <flow id="f22" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="6Ni 7Wi"/>
+  </flow>
+  <flow id="f23" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="1Wi 1No"/>
+  </flow>
+  <flow id="f24" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="8Wi 8Eo"/>
+  </flow>
+  <flow id="f25" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="4Ni 3Ei"/>
+  </flow>
+  <flow id="f26" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="3Ni 4Wi"/>
+  </flow>
+  <flow id="f27" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="0Ei 3Ni"/>
+  </flow>
+  <flow id="f28" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="2Wi 2No"/>
+  </flow>
+  <flow id="f29" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="7Wi 4Si"/>
+  </flow>
+  <flow id="f30" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="1Wi 2Wi"/>
+  </flow>
+  <flow id="f31" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="3Ni 3Wo"/>
+  </flow>
+  <flow id="f32" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="6Ei 6So"/>
+  </flow>
+  <flow id="f33" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="6Ei 3Si"/>
+  </flow>
+  <flow id="f34" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="5Wi 2Si"/>
+  </flow>
+  <flow id="f35" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="1Ei 1No"/>
+  </flow>
+  <flow id="f36" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="5Ni 5Eo"/>
+  </flow>
+  <flow id="f37" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="3Wi 4Wi"/>
+  </flow>
+  <flow id="f38" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="4Si 3Ei"/>
+  </flow>
+  <flow id="f39" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="6Ei 6Wo"/>
+  </flow>
+  <flow id="f40" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="3Wi 6Ni"/>
+  </flow>
+  <flow id="f41" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="3Si 3Wo"/>
+  </flow>
+  <flow id="f42" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="7Ni 7So"/>
+  </flow>
+  <flow id="f43" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="0Si 0No"/>
+  </flow>
+  <flow id="f44" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="3Ei 0Si"/>
+  </flow>
+  <flow id="f45" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="8Ni 8So"/>
+  </flow>
+  <flow id="f46" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="8Ei 5Si"/>
+  </flow>
+  <flow id="f47" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="7Si 4Si"/>
+  </flow>
+  <flow id="f48" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="2Si 2No"/>
+  </flow>
+  <flow id="f49" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="1Ei 4Ni"/>
+  </flow>
+  <flow id="f50" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="4Ei 1Si"/>
+  </flow>
+  <flow id="f51" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="7Ni 6Ei"/>
+  </flow>
+  <flow id="f52" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="1Ni 2Wi"/>
+  </flow>
+  <flow id="f53" type="car" begin="0" end="3600" vehsPerHour="27.8" departLane="free" departSpeed="max">
+    <route edges="3Wi 0Si"/>
+  </flow>
+</routes>

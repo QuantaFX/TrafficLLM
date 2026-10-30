@@ -1,0 +1,957 @@
+ 
+ [2508.02344] Traffic-R1: Reinforced LLMs Bring Human-Like Reasoning to Traffic Signal Control Systems 
+ Traffic-R1: Reinforced LLMs Bring Human-Like Reasoning to Traffic Signal Control Systems 
+ Xingchen Zou 1,2 , Yuhao Yang 3 , Zheng Chen 2 , Xixuan Hao 1 , 
+ Yiqi Chen 2 , Chao Huang 3 , Yuxuan Liang 1 
+ Note: Corresponding author. Email: yuxliang@outlook.com.
+ Affiliation: 
+ 1 The Hong Kong University of Science and Technology (Guangzhou), 
+ 2 PCITECH,
+ 3 The University of Hong Kong 
+ email: xzou428,xhao390@connect.hkust-gz.edu.cn, chaohuang75@gmail.com, 
+ email: chenzheng1, chenyiqi@pcitech.com, yuhao-yang, yuxliang@outlook.com 
+ © none 
+ Abstract. 
+ Traffic signal control (TSC) is vital for mitigating congestion and sustaining urban mobility. In this paper, we introduce Traffic-R1, a foundation model with human-like reasoning for TSC systems. Our model is developed through self-exploration and iteration of reinforced large language models (LLMs) with expert guidance in a simulated traffic environment.
+Compared to traditional reinforcement learning (RL) and recent LLM-based methods, Traffic-R1 offers three significant advantages.
+First, Traffic-R1 delivers zero-shot generalisation, transferring unchanged to new road networks and out-of-distribution incidents by utilizing its internal traffic control policies and human-like reasoning.
+Second, its 3B-parameter architecture is lightweight enough for real-time inference on mobile-class chips, enabling large-scale edge deployment.
+Third, Traffic-R1 provides an explainable TSC process and facilitates multi-intersection communication through its self-iteration and a new synchronous communication network.
+Extensive benchmarks demonstrate that Traffic-R1 sets a new state of the art, outperforming strong baselines and training-intensive RL controllers. In practice, the model now manages signals for more than 55,000 drivers daily, shortening average queues by over 5% and halving operator workload. Our checkpoint is available at https://huggingface.co/Season998/Traffic-R1 . 
+ Keywords: Traffic signal control, large language model, reinforcement learning
+ 1. Introduction 
+ Figure 1. Introduction of Traffic-R1, a foundation (covering six features) reinforced LLM for TSC systems. 
+ Rapid urbanization and surging vehicle ownership intensify congestion, wasting billions of productive hours, burning vast fuel reserves, and driving nearly a quarter of urban greenhouse emissions. Prolonged delays raise crash rates, slow emergency response, exacerbate cardiopulmonary pollution, and unfairly burden transit-poor communities. Within this broad societal context, traffic-signal control (TSC), which coordinates phase sequences and durations at signalized intersections, remains a principal lever for mitigating congestion and improving network throughput ( Yau et al. 2017 ; Ye et al. 2019 ; Wei et al. 2021 ) . 
+ Traditional controllers such as FixedTime ( Koonce et al. 2008 ) and MaxPressure ( Varaiya 2013 ) rely on fixed heuristics and thus adapt poorly to fluctuating demand. Reinforcement learning (RL) replaces these hand-crafted rules with a data-driven policy: each cycle observes lane queues, delays, and neighboring signal states, selects a phase (or duration) as the action, and receives a reward linked to delay reduction or throughput gain. Deep RL further augments this paradigm by learning the policy end-to-end with expressive function approximators. These advances achieve impressive benchmark scores in simulation ( Srinivasan et al. 2006 ; Zhao et al. 2011 ) . However, field deployment remains rare as existing methods still suffer from
+(i) cross-region generalization: policies tuned on one city transfer poorly to another ( Zhao et al. 2024 ; Wei et al. 2021 ) ;
+(ii) interpretability: nontransparent decisions undermine practitioner trust ( Vouros 2022 ; Glanois et al. 2024 ) ; and
+(iii) robustness to out-of-distribution (OOD) events: models falter during incidents or emergency-vehicle priority scenarios ( Glanois et al. 2024 ; Wei et al. 2018 ) . 
+ Recently, large language models (LLMs) have been enlisted to alleviate these shortcomings. Two integration paradigms dominate. In the LLM Explainer paradigm ( Lai et al. 2023 ; Yuan et al. 2025 ) , an LLM is trained to verbalize the policy of an RL controller, translating opaque action choices into natural language rationales. In contrast, the LLM assistant framework ( Wang et al. 2025a ; Wang et al. 2024 ) keeps the RL agent in charge of routine control and consults an LLM only when OOD incidents arise. Both paradigms are promising yet remain distant from large-scale deployment: LLM Explainers inherit the coverage and performance ceiling of the underlying RL policy, and their post-hoc narratives can diverge from the controller’s true internal logic ( Wu et al. 2025 ; Glanois et al. 2024 ; Wei et al. 2018 ; Agarwal et al. 2024 ; Malin et al. 2025 ) ; LLM Assistants introduce additional prompt engineering and repeated LLM queries, inflating latency and computation while providing limited benefit for everyday signal timing. Hence practitioners remain cautious about adopting current LLM-enhanced TSC solutions. 
+ To date, operational TSC systems still rely on heuristic rule sets and substantial human oversight to cope with routine flow and unexpected incidents ( Mandhare et al. 2018 ; Müller et al. 2021 ; Mahavar and Juremalani 2018 ) . Bridging this research-deployment gap requires a foundational model for TSC systems, i.e., a single, versatile agent capable of (1) zero-shot generalization to unseen traffic networks and OOD incidents, (2) resource-efficient inference on edge hardware such as mobile platforms, and (3) human-like & transparent reasoning that supports explainable decision-making and multi-intersection coordination. Figure 1 ) schematically illustrates these three desiderata in the envisioned foundational agent. 
+ We answer this call with Traffic-R1 , a lightweight reinforced LLM with human-like reasoning capabilities, designed as a foundational TSC model that incorporates all six key features shown in Figure 1 for real-world deployment. Built on Qwen2.5-3B, a efficient LLM optimized for resource-constrained devices, Traffic-R1 employs a two-stage agentic RL finetuning approach to enhance TSC generalization. This includes an offline RL stage, where the model is finetuned using offline TSC recordings and decisions from human experts to integrate their knowledge, and an online RL stage, where it explores dynamic simulated traffic environments to adapt to various scenarios.
+Drawing on recent studies ( Bai et al. 2022 ; Liu et al. 2024 ; Yu et al. 2025 ) , Traffic-R1 is trained to generate Chain-of-Thought responses and actions through self-iteration during RL finetuning, guided by a policy-based reward model that includes both format and action rewards. In the offline RL stage, action rewards are calculated based on the differences between the model’s actions and human expert decisions, while in the online RL stage, they are derived from the simulated traffic systems. This approach allows the lightweight Traffic-R1 to develop reasoning and decision-making abilities through self-exploration within human expert decisions and dynamic simulated traffic environments, supporting SOTA zero-shot TSC performance while ensuring resource-efficient inference and robust generalization to OOD scenarios. 
+ Moreover, since all samples for updating parameters are generated by Traffic-R1 itself within our RL finetuning framework, it reduces the risk of degrading general language abilities or experiencing catastrophic forgetting, which can occur due to capacity mismatches between synthetic samples produced by other LLMs and the capabilities of a compact base model. As a result, Traffic-R1 retains strong general language skills alongside explainable human-like reasoning capabilities for transparent decision-making. To further leverage these language abilities, we introduce an asynchronous communication network for LLM-based TSC systems. This network enables LLM agents to communicate and coordinate in a manner similar to human traffic agents, using an asynchronous message-passing mechanism that facilitates effective and transparent coordination across multiple intersections. 
+ In summary, our contributions lie in the following aspects: 
+ • 
+ Foundation model for TSC systems : We present the first LLM-based, general-purpose controller that can operate at any interaction without additional training, handling routine signalling, incident management, and emergency-vehicle prioritization with human-level reasoning. 
+ • 
+ Lightweight yet high-performing : We develop a two-stage agentic RL fine-tuning framework to train a 3B-parameter LLM that outperforms large counterparts (e.g., GPT-4o) and strong RL baselines, while remaining deployable on mobile or edge devices. 
+ • 
+ Human-like reasoning and communication : We achieve human-like reasoning for explainable TSC through self-iteration of the reinforced LLM with policy-based rewards. This reasoning, combined with language capabilities, is further utilized in our asynchronous communication network for effective coordination across multiple intersections. 
+ • 
+ Extensive validation and field deployment : We evaluate Traffic-R1 on standard TSC benchmarks and OOD incident tasks, where it attains stable, state-of-the-art (SOTA) performance. In live deployment on a platform that manages signals for more than 55,000 drivers daily, parallel trials show a 5% cut in average queues and a greater than 50% reduction in operator workload for phase planning and incident response. 
+ 2. Related Works 
+ Traffic Signal Control. 
+TSC are essential for effective traffic management. The FixedTime method, one of the earliest and most widely approaches in TSC systems, uses predetermined cycle lengths and phase allocations set by human experts for each intersection ( Yau et al. 2017 ; Serafini and Ukovich 1989 ) . While this method is straightforward and stable, it is inefficient across dynamic traffic conditions and costs a large amount of human effort ( Serafini and Ukovich 1989 ; Thunig et al. 2019 ) . The Maxpressure approach introduces adaptive control for better performance by prioritizing vehicle movement based on pressure, defined as the number of queuing vehicles in each direction ( Varaiya 2013 ; Mercader et al. 2020 ) . However, both fixed-time and Maxpressure methods are limited by their reliance on fixed plans or rules, which struggle to adapt to varying traffic scenarios ( Rasheed et al. 2020 ; Wei et al. 2021 ; Abdulhai et al. 2003 ) . Advances in machine learning have led to the development of RL-based TSC methods, such as CoLight ( Wei et al. 2019 ) , CosLight ( Ruan et al. 2024 ) , and MPLight ( Chen et al. 2020 ) . These RL approaches have significantly improved TSC performance in simulated environments but often fail to meet the requirements for real-world deployment ( Chen et al. 2022 ; Wei et al. 2021 ; Qadri et al. 2020 ) . Recent research has explored the integration of LLMs to enhance TSC systems; however, various challenges remain for their real-world deployment. ( Lai et al. 2023 ; Yuan et al. 2025 ; Wang et al. 2025a ; Wang et al. 2024 ) . 
+ RL finetuning for LLM. 
+LLMs often require finetuning to adapt to specific tasks or align with human preferences ( Wu et al. 2025 ; Minaee et al. 2024 ) . In recent years, instruction finetuning ( Chung et al. 2024 ; Dettmers et al. 2023 ) has gained popularity due to its simplicity and effectiveness in adapting LLMs for various tasks and response formats. In contrast, RL finetuning, particularly Reinforcement Learning from Human Feedback ( Ouyang et al. 2022 ) , has been less discussed for downstream applications due to its complex training pipeline and high computational cost ( Gao et al. 2023 ; Bai et al. 2022 ; Ramamurthy et al. 2022 ) . Recent advances have shown that LLMs can develop reasoning capabilities by themselves through interaction with RL environments. The introduction of Group Policy Reward Optimization ( Liu et al. 2024 ) significantly reduces computational costs by introducing policy-based rewards. RL fine-tuning gradually turns to be popular in serval domains and offers significant advantages ( Cao et al. 2024 ; Xu et al. 2025 ; Ke et al. 2025 ) : (1) self-exploration reduces the need for extensive training samples, (2) RL guides LLMs to learn abilities rather than imitating or memorize answers, and (3) RL fine-tuning mitigates ability degradation and catastrophic forgetting, as updates to parameters are based on self-generated samples with Kullback-Leibler divergence constraints. 
+ 3. Preliminaries 
+ Definition 1. 
+ Road Network. The road network is modeled as a directed graph with intersections 𝒱 \mathcal{V} and lanes ℒ \mathcal{L} . Lanes are classified into three types: (1) go-through lanes ( ℒ go \mathcal{L}_{\text{go}} ), (2) left-turn lanes ( ℒ left \mathcal{L}_{\text{left}} ), and (3) right-turn lanes ( ℒ right \mathcal{L}_{\text{right}} ). Each lane connects to neighboring intersections and is divided into segments S = { s 1 , … , s n } S=\{s_{1},\ldots,s_{n}\} based on their distance from the intersection. 
+ Definition 2. 
+ Signal Phase. At each signal-switching time step, the model assigned to an intersection selects a signal phase from a predefined set 𝒜 = { a 1 , … , a m } \mathcal{A}=\{a_{1},\ldots,a_{m}\} . A signal phase is defined as a = set ​ ( ℒ allow ) a=\text{set}(\mathcal{L}_{\text{allow}}) , where ℒ allow \mathcal{L}_{\text{allow}} represents the set of lanes permitted to proceed without conflicting movements (i.e., green light for ℒ allow \mathcal{L}_{\text{allow}} and red light for conflicting lanes). 
+ Definition 3. 
+ Traffic Signal Control System. The traffic signal control system comprises multiple agents Π = { π 1 , … , π n } \Pi=\{\pi_{1},\ldots,\pi_{n}\} , each managing signal control at one of n n intersections in a road network. Each agent π i \pi_{i} collaborates with neighboring agents through traffic observations and message passing at signal-switching time steps to coordinate multi-intersection operations, such as green wave synchronization and emergency response. 
+ Problem Statement 0. 
+ LLM Reasoning for Traffic Signal Control. For each intersection i i in the road network, a LLM serves as agent π i \pi_{i} . At time step t t , agent π i \pi_{i} receives a textual traffic observation 𝒪 i , t \mathcal{O}_{i,t} , incident information ℐ i , t \mathcal{I}_{i,t} , and messages ℳ i , t − 1 \mathcal{M}_{i,t-1} from neighboring agents. The TSC problem for intersection i i is formulated as optimizing the selection of a signal phase a i , t ∈ 𝒜 a_{i,t}\in\mathcal{A} and generating reasoning content ℛ i , t \mathcal{R}_{i,t} to maximize the reward function, subject to incident-specific and multi-agent coordination constraints. The system dynamics are defined as: 
+ (1) 
+ ( ℛ i , t , a i , t ) = π i ​ ( 𝒪 i , t , ℐ i , t , ℳ i , t − 1 , θ i ) \displaystyle(\mathcal{R}_{i,t},a_{i,t})=\pi_{i}(\mathcal{O}_{i,t},\mathcal{I}_{i,t},\mathcal{M}_{i,t-1};\theta_{i}) 
+ where ℛ i , t \mathcal{R}_{i,t} is the reasoning output of agent π i \pi_{i} with parameters θ i \theta_{i} , a i , t ∈ 𝒜 a_{i,t}\in\mathcal{A} is the selected phase. 
+ 4. Methodology 
+ Figure 2. Introduction of the two-stage RL framework 
+ In this section, we describe the training pipeline for Traffic-R1. As shown in Figure 2 , we utilize a two-stage RL framework comprising offline human-informed RL and online open-world RL to finetune the LLM. For each stage, we define distinct training datasets, environments, policy optimization methods, and reward designs to support their functionality. Besides, we propose an asynchronous communication network for our reinforced LLM to support efficient multi-intersection coordination in TSC systems. 
+ 4.1. Human-Informed Reinforcement Learning 
+ Existing LLM-based methods for TSC typically finetune their models on action trajectories generated by traditional SOTA RL models. While this approach ensures performance in simulated experiments, it has notable limitations. First, finetuning LLMs to imitate traditional RL models confines their performance and generalization to the capabilities of the teacher RL model. Second, action trajectories produced by RL models through iterative optimization in simulated environments may not provide clear reasoning and logic for LLMs, as some RL decision policies and actions can be suboptimal or impractical for general TSC, focusing instead on narrow performance metrics. To address these limitations, we propose a human-informed RL finetuning stage that incorporates an expert-collaborative TSC dataset and offline policy optimization. This approach replaces the RL model teacher with real human traffic experts to guide the finetuning of the LLM. 
+ 4.1.1. Expert-Collaborative TSC Dataset Construction 
+ Our RL finetuning approach reduces the training data requirement from hundreds of thousands of samples typically needed for instruction finetuning to just thousands. This enables the creation of a TSC dataset with actions provided by human experts for each traffic scenario. We developed an expert-collaborative TSC dataset consisting of 3,000 high-quality question-answer (QA) samples.
+As illustrated in Figure 3 , we generate diverse traffic observations and their corresponding textual descriptions inspired by ( Lai et al. 2023 ) . These are processed by DeepSeek-R1 to produce suggested actions based on the observations. To evaluate the effectiveness of these actions, we utilize the SUMO simulator ( Krajzewicz et al. 2012 ) to model traffic flow variations caused by the suggested actions and assess changes in mean vehicle speed. Additionally, each suggested action is reviewed by two human experts from the traffic control department. For samples where DeepSeek-R1’s suggested actions do not pass validation, human experts manually determine the correct actions. Through this pipeline, we collected 3,000 valid samples with the collaboration of 11 human traffic experts. Notably, we exclude any reasoning content from the dataset and retain only the final actions to encourage the LLM to generate its own reasoning during subsequent RL iterations, rather than imitating external reasoning processes. 
+ Figure 3. Expert-Collaborative Dataset Construction Pipeline 
+ 4.1.2. Offline Policy Optimization 
+ Inspired by the work of ( Liu et al. 2024 ) , which effectively finetunes LLMs on mathematics and coding datasets containing only final answers or actions without reasoning text, our approach uses the same offline RL framework to finetune the LLM on our expert-collaborative TSC dataset to promote self-thinking in traffic control. The core process involves an LLM policy model interacting with an offline environment, guided by a rule-based reward derived from expert-provided answers. Given a textual prompt x x describing a specific traffic scenario, the LLM, parameterized by θ \theta , generates an output sequence y y autoregressively according to its policy π θ ​ ( y ∣ x ) = ∏ t = 1 | y | π θ ​ ( y t ∣ x , y < t ) \pi_{\theta}(y\mid x)=\prod_{t=1}^{|y|}\pi_{\theta}(y_{t}\mid x,y_{<t}) . 
+ Input Template for Rollout. Rollout is a critical component of RL iterations, which involves using the original LLM π θ \pi_{\theta} to produce a variety of structured responses. To guide the interaction process, the LLM is prompted with specific templates that include format instructions, ensuring the generated sequence y y contains both task-specific reasoning and answer components in a structured, extractable format for the offline reward policy. The input prompt template is presented in Appendix A.1 . 
+ Offline Rule-based Reward. By treating the offline TSC task as a math-like problem-solving process during our offline RL stage, the rule-based reward is required to be clear and simple, minimizing computational complexity and preventing reward hacking. The reward function R R is a weighted combination of an accuracy reward R acc R_{\text{acc}} and a format reward R format R_{\text{format}} , defined as: R ⁡ ( x , y ) ∈ [ 0 , 1 ] = [ w acc , w format ] ⋅ [ R acc , R format ] T R(x,y)\in[0,1]=\begin{bmatrix}w_{\text{acc}},w_{\text{format}}\end{bmatrix}\cdot\begin{bmatrix}R_{\text{acc}},R_{\text{format}}\end{bmatrix}^{T} . Since signal actions are mutually exclusive, R acc = 1 R_{\text{acc}}=1 only when the generated action exactly matches the expert-suggested action. Similarly, R format = 1 R_{\text{format}}=1 only when the generated sequence y y fully adheres to the specified reasoning and answer format instructions. 
+ Reinforcing Reasoning via Policy Optimization. In the offline environment, the reward function R R evaluates the quality of output y y . To optimize the policy parameters θ \theta , we employ Group Relative Policy Optimization (GRPO) ( Liu et al. 2024 ) to ensure stable gradient updates. Let π θ \pi_{\theta} represent the policy and ℬ = ( x i , a i ( j ) j = 1 k ) \mathcal{B}={(x_{i},{a_{i}^{(j)}}_{j=1}^{k})} denote a batch of input prompts x i x_{i} , each paired with k k candidate completions a i ( j ) a_{i}^{(j)} sampled from the policy. The reward function R R assigns a score r i ( j ) r_{i}^{(j)} to each completion a i ( j ) a_{i}^{(j)} .
+To address high variance in policy gradients, GRPO computes group-normalized advantages for each completion a i ( j ) a_{i}^{(j)} generated from the same input x i x_{i} , as shown in Equation 2 . This approach centers the rewards within each group, mitigating the impact of absolute reward magnitudes: 
+ (2) 
+ A i ( j ) = r i ( j ) − 1 k ​ ∑ l = 1 k r i ( l ) , A_{i}^{(j)}=r_{i}^{(j)}-\frac{1}{k}\sum_{l=1}^{k}r_{i}^{(l)}, 
+ The policy is updated by maximizing the clipped surrogate objective: 
+ ℒ ⁡ ( θ ) \displaystyle\mathcal{L}(\theta) 
+ = 𝔼 ( x i , a i ( j ) ∼ π θ ref ) [ min ( ρ i ( j ) A i ( j ) , clip ( ρ i ( j ) , 1 − ϵ , 1 + ϵ ) A i ( j ) ) \displaystyle=\mathbb{E}_{(x_{i},a_{i}^{(j)}\sim\pi_{\theta_{\text{ref}}})}\Bigg[\min\left(\rho_{i}^{(j)}A_{i}^{(j)},\text{clip}(\rho_{i}^{(j)},1-\epsilon,1+\epsilon)A_{i}^{(j)}\right) 
+ (3) 
+ − β 𝔻 KL [ π θ ( ⋅ | x ) ∥ π θ ref ( ⋅ | x ) ] ] , \displaystyle\quad-\beta\mathbb{D}_{\text{KL}}\left[\pi_{\theta}(\cdot|x)\parallel\pi_{\theta_{\text{ref}}}(\cdot|x)\right]\Bigg], 
+ where ρ i ( j ) = π θ ​ ( a i ( j ) | x i ) π θ ref ​ ( a i ( j ) | x i ) \rho_{i}^{(j)}=\frac{\pi_{\theta}(a_{i}^{(j)}|x_{i})}{\pi_{\theta_{\text{ref}}}(a_{i}^{(j)}|x_{i})} is the likelihood ratio between the current policy π θ \pi_{\theta} and the reference policy π θ ref \pi_{\theta_{\text{ref}}} , and ϵ \epsilon is the clipping threshold. The coefficient β \beta determines the strength of the Kullback-Leibler divergence penalty 𝔻 KL [ π θ ∥ π θ ref ] \mathbb{D}_{\text{KL}}\left[\pi_{\theta}\parallel\pi_{\theta_{\text{ref}}}\right] . In practice, the reference policy π θ ref \pi_{\theta_{\text{ref}}} is typically set to a snapshot of the previous policy, which stabilizes training to inspiring deep thinking instead of imitation by constraining policy updates. 
+ 4.2. Open-World Reinforcement Learning 
+ Although the human-informed offline RL has finetuned LLM to learn from human experts for stable performance on TSC tasks, the model’s capacity is limited to the expert knowledge extracted from the dataset. In this section, we propose an open-world online RL to inspire LLM explore multi-step and multi-intersection TSC networks by itself. This approach allows LLM to interact with the online dynamic simulated traffic environment and update its policy based on online reward for better performance. 
+ Online Traffic Environment Simulation 
+To simulate the multi-intersection and multi-step dynamics of real-world traffic flow, we constructed a 4 × 4 4\times 4 simulated road network with 300-meter roads between each intersection. The 16 positions in the network represent most typical road scenarios encountered at real-world intersections. Traffic flow within the network is randomly generated, allowing for up to 8,000 vehicles over the course of one hour. For efficiency in iterations, we utilize CityFlow ( Zhang et al. 2019 ) as the simulator to model the traffic dynamics resulting from the actions of the LLM. The online multi-step rewards R t ​ r ​ a ​ j R_{t}raj are quantified based on the cumulative average queue length and waiting time caused by a series of multi-step, multi-intersection actions. We use group advantage as final rewards to mitigate random variations in environment during online training through group mean comparison, ensuring stable optimization gradients. 
+ Multi-step Policy Optimization 
+Existing RL finetuning often relies on an offline single-turn setting, such as mathematical problem solving. However, our online RL approach requires LLMs to operate in interactive environments that evolve over multiple steps with stochastic feedback. Although ( Wang et al. 2025b ) proposed trajectory-level optimization for multi-step online scenarios by concatenating environment observations and LLM responses step by step with a trajectory reward, this solution is not suitable for traffic control tasks. The full trajectory for TSC observation and reasoning may become excessively long, resulting in high computation costs and sparse token-level attention for key tokens.
+Moreover, real-world TSC cannot be directly modeled as a perfect Markov Decision Process, as is done in digital games like ( Wang et al. 2025b ) . Attempting to directly adapt the approach from ( Wang et al. 2025b ) to real-world TSC would likely yield results similar to those of traditional RL methods, which are characterized by poor generalization and limited explanatory power. 
+ To address this issue, we propose a specific multi-step policy optimization method for traffic scenarios. As traffic flow varies randomly over time in real-world systems, the connections between previous actions and the subsequent observation and action are not strictly continuous and exhibit chaotic dynamics. Our approach, termed Stepwise Trajectory Policy Optimization (STPO), involves directly assigning the trajectory reward to each individual step instead of entire trajectories, corresponding to a specific observation o t o_{t} and response a t a_{t} pair. This method decomposes the long trajectory into segments, thereby reducing computational overhead and enabling denser reward signals at the step level. To formalize STPO, we define the reward assignment and policy update process with the following equations. The step-wise reward r t r_{t} for observation o t o_{t} and action a t a_{t} is derived from the trajectory reward R t ​ r ​ a ​ j R_{t}raj by distributing it proportionally across steps: 
+ (4) 
+ r t = R traj ( o 1 : T , a 1 : T ) ⋅ T − 1 , r_{t}={R_{\text{traj}}(o_{1:T},a_{1:T})}\cdot{T}^{-1}, 
+ where R t r a j ( o 1 : T , a 1 : T ) R_{t}raj(o_{1:T},a_{1:T}) is the total trajectory reward over the sequence of observations o 1 : T o_{1:T} and actions a 1 : T a_{1:T} , and T is the number of steps.
+The policy p ​ i t ​ h ​ e ​ t ​ a ​ ( a t | o t ) pi_{t}heta(a_{t}|o_{t}) is updated using the advantage A t A_{t} similar to Equation 2 . The policy optimization objective is: 
+ (5) 
+ ℒ STPO ​ ( θ ) = 𝔼 ( o t , a t ∼ π θ ref ) ​ [ log ⁡ π θ ​ ( a t | o t ) ​ A t ] , \mathcal{L}_{\text{STPO}}(\theta)=\mathbb{E}_{(o_{t},a_{t}\sim\pi_{\theta_{\text{ref}}})}\left[\log\pi_{\theta}(a_{t}|o_{t})A_{t}\right], 
+ where the rest computations on Kullback-
+Leibler divergence penalty and advantage clipping are similar to orginal GRPO in Equation 4.1.2 . 
+ 4.3. Asynchronous Communication Network 
+ Existing research on TSC systems typically relies on a synchronized parallel workflow assumption for simplicity, where all TSC agents at intersections update their observations and actions simultaneously at each time step. In practice, this synchronized approach becomes a limitation when addressing multi-intersection coordination. In real-world settings, coordination operates asynchronously, with one agent sending a message, another receiving it along with an action and response, and the process continuing back and forth.As a result, implementations of multi-intersection coordination within existing synchronized parallel workflows are often inefficient, requiring extensive shared global observations for every intersection, or ineffective, leading to incompatible final decisions even with shared observations. While some reinforcement learning methods attempt to improve performance by incorporating global or neighborhood observations into intersection representations, their generalization and scalability remain problematic. 
+ Figure 4. Introduction of Asynchronous Communication Network compared with conventional synchronized network 
+ To achieve natural multi-intersection communication and coordination, and to unlock the potential of the reinforced LLM TSC model, we design an asynchronous communication network for real-world multi-intersection TSC systems. As illustrated in Figure 4 , we organize intersections into two groups based on the parity of their positions. Each conventional TSC step is divided into two inner steps: the first inner step activates models from group one, while the second inner step activates models from group two. This parity ensures that signal control across intersections operates in a structured spatial and temporal order.
+This arrangement allows models activated in the first inner step to generate messages for their neighboring intersections, which are then activated in the subsequent inner step to receive and process these messages. With this network, the language communication capabilities of LLMs can be fully utilized to enhance TSC systems. 
+ Table 1. Statistics of traffic flow datasets. 
+ Dataset 
+ Structure 
+ Vehicles 
+ Arrival rate (vehicles/5min) 
+ Mean 
+ Std 
+ Max 
+ Min 
+ Jinan1 
+ 3 × 4 3\times 4 
+ 6295 
+ 523.67 
+ 98.52 
+ 671 
+ 255 
+ Jinan2 
+ 4365 
+ 362.83 
+ 74.81 
+ 493 
+ 236 
+ Jinan3 
+ 5494 
+ 456.92 
+ 160.87 
+ 569 
+ 362 
+ Hangzhou1 
+ 4 × 4 4\times 4 
+ 2983 
+ 247.68 
+ 40.44 
+ 332 
+ 211 
+ Hangzhou2 
+ 6984 
+ 581.08 
+ 318.43 
+ 1145 
+ 202 
+ 5. Experiments 
+ Table 2. Zero-shot performance comparison on conventional traffic signal control tasks (the smaller the better). The best results are in bold and second-best results are u nderlined. 
+ Models 
+ Jinan1 
+ Jinan2 
+ Jinan3 
+ Hangzhou1 
+ Hangzhou2 
+ Paradigm 
+ ATT ↓ \downarrow 
+ AWT ↓ \downarrow 
+ ATT ↓ \downarrow 
+ AWT ↓ \downarrow 
+ ATT ↓ \downarrow 
+ AWT ↓ \downarrow 
+ ATT ↓ \downarrow 
+ AWT ↓ \downarrow 
+ ATT ↓ \downarrow 
+ AWT ↓ \downarrow 
+ FixedTime 
+ 453.41 
+ 51.32 
+ 370.34 
+ 35.15 
+ 384.53 
+ 36.95 
+ 497.54 
+ 36.41 
+ 408.53 
+ 53.94 
+ Traditional 
+ Methods 
+ Maxpressure 
+ 274.34 
+ 32.04 
+ 246.35 
+ 22.56 
+ 245.66 
+ 24.31 
+ 289.55 
+ 21.52 
+ 349.53 
+ 67.52 
+ LLMLight-7B [KDD’24] 
+ 274.47 
+ 33.66 
+ 286.53 
+ 28.66 
+ 271.11 
+ 28.27 
+ 299.31 
+ 25.53 
+ 331.38 
+ 51.79 
+ RL- 
+ based 
+ Methods 
+ MPLight [AAAI’20] 
+ 455.34 
+ 72.45 
+ 471.14 
+ 78.03 
+ 427.37 
+ 64.91 
+ 491.32 
+ 64.05 
+ 425.42 
+ 69.85 
+ AttendLight [NeurIPS’20] 
+ 381.11 
+ 67.59 
+ 305.53 
+ 64.72 
+ 331.34 
+ 66.42 
+ 318.94 
+ 67.84 
+ 348.41 
+ 65.58 
+ CoLight [CIKM’19] 
+ 472.44 
+ 91.09 
+ 450.41 
+ 78.59 
+ 498.84 
+ 89.94 
+ 494.61 
+ 72.18 
+ 435.32 
+ 81.11 
+ Efficient-Colight [Arxiv’21] 
+ 663.16 
+ 98.98 
+ 640.34 
+ 91.32 
+ 638.23 
+ 80.34 
+ 701.45 
+ 103.43 
+ 534.94 
+ 87.19 
+ Advanced-CoLight [ICML’22] 
+ 347.31 
+ 56.54 
+ 345.78 
+ 35.96 
+ 342.56 
+ 37.55 
+ 485.32 
+ 54.11 
+ 523.19 
+ 72.56 
+ CoLLMLight-8B [Arxiv’25] 
+ 281.12 
+ 33.23 
+ 269.34 
+ 25.51 
+ 268.32 
+ 34.36 
+ 298.42 
+ 24.45 
+ 336.92 
+ 45.43 
+ Zero- 
+ shot 
+ Methods 
+ Llama3.3-70B [Meta’24] 
+ 2 72.41 
+ 33.53 
+ 2 44.55 
+ 22.04 
+ 2 43.53 
+ 25.43 
+ 281.44 
+ 17.65 
+ 326.42 
+ 45.56 
+ Qwen 2.5-72B [Alibaba’24] 
+ 275.42 
+ 33.15 
+ 251.41 
+ 25.49 
+ 264.21 
+ 24.54 
+ 282.13 
+ 17.54 
+ 329.34 
+ 39.34 
+ GPT 3.5-turbo [OpenAI’23] 
+ 337.32 
+ 39.98 
+ 328.19 
+ 37.08 
+ 343.19 
+ 34.35 
+ 293.42 
+ 23.45 
+ 348.59 
+ 33.45 
+ GPT-4o [OpenAI’24] 
+ 281.58 
+ 3 0.11 
+ 259.61 
+ 24.71 
+ 258.85 
+ 2 4.17 
+ 280.48 
+ 1 6.32 
+ 3 25.48 
+ 32.26 
+ DeepSeek-R1-671B [DeepSeek’25] 
+ 279.11 
+ 31.85 
+ 258.43 
+ 2 1.67 
+ 262.21 
+ 27.87 
+ 2 78.565 
+ 17.81 
+ 335.53 
+ 30.19 
+ DeepSeek-R1-Distill-7B [DeepSeek’25] 
+ 331.45 
+ 38.91 
+ 311.43 
+ 31.43 
+ 288.42 
+ 29.23 
+ 291.32 
+ 19.56 
+ 344.73 
+ 33.72 
+ Traffic-R1-3B (Ours) 
+ 270.34 
+ 27.95 
+ 239.53 
+ 21.11 
+ 238.03 
+ 23.17 
+ 277.83 
+ 15.51 
+ 324.11 
+ 3 3.14 
+ In this section, we evaluate our proposed Traffic-R1 to address the following research questions: 
+ • 
+ RQ1 : Can Traffic-R1 outperform other traffic signal control (TSC) models on public datasets and in zero-shot settings? 
+ • 
+ RQ2 : How does Traffic-R1 perform in handling out-of-distribution incidents through human-like reasoning? 
+ • 
+ RQ3 : What’s the advantage of our RL-based finetuning over traditional paradigms for LLMs in traffic control tasks? 
+ • 
+ RQ4 : How effective are the designs of Traffic-R1 under various ablation settings? 
+ 5.1. Experimental Settings 
+ 5.1.1. Dataset 
+ Our experiments were primarily conducted on two public traffic flow datasets ( Mei et al. 2024 ) to ensure fair comparison, as detailed in Table 1 . The Jinan dataset comprises 12 intersections from Jinan, China, and includes three distinct traffic flow recordings representing different time periods. The Hangzhou dataset consists of 16 intersections from Hangzhou, China, with two recordings.
+For out-of-distribution scenarios, we collect traffic emergency incident recordings from traffic management departments and summarize them into 200 representative textual examples, such as passages running onto roads, vehicle accidents, and school times, along with the action records implemented by traffic managers as correct responses (presented in Appendix A.2 ). Besides, for emergency vehicle coordination scenarios, we modify the Hangzhou1 datasets by incorporating a 5% proportion of emergency vehicle flow to simulate real-world conditions. 
+ 5.1.2. Implementation Details 
+ We use CityFlow ( Zhang et al. 2019 ) , a widely used experimental simulator for traffic control, to test all models. For each dataset, we apply a standard action space consisting of four signal control phases: NTST (north-south through), ETWT (east-west through), ELWL (east-west left-turn), and NLSL (north-south left-turn). In the experimental environment, right-turn movements are permitted at all times, and each phase lasts for 15 seconds, aligning with typical requirements of real-world TSC systems ( Zhang et al. 2022 ; Mei et al. 2024 ) . Every phase action is followed by a three-second yellow phase and a two-second red phase to facilitate the transition to the next phase. All traffic flow datasets in experiments are simulated for one hour. 
+ 5.1.3. Baseline Methods 
+ We incorporate a range of baseline models from various research areas to ensure a comprehensive comparison. For traditional TSC methods, we include FixedTime ( Koonce et al. 2008 ) and Maxpressure ( Varaiya 2013 ) . For RL-based methods, we evaluate five effective approaches: MPLight ( Chen et al. 2020 ) , AttendLight ( Oroojlooy et al. 2020 ) , CoLight ( Wei et al. 2019 ) , Efficient-CoLight ( Wu et al. 2021 ) , and Advanced-CoLight ( Zhang et al. 2022 ) , along with the state-of-the-art LLM-based method, LLMLight ( Lai et al. 2023 ) .
+For zero-shot methods, we assess the performance of CoLLMLight ( Yuan et al. 2025 ) and general LLM models, which include Llama 3.3 (70B), Qwen 2.5 (72B), GPT 3.5-turbo, GPT-4o, and DeepSeek-R1 (671B and distilled to 7B). All learning-based baselines are trained on the same 4x4 simulated road network and traffic flow dataset as Traffic-R1 during the open-world RL stage. Notably, for LLMLight and CoLLMLight, we also incorporate our expert-collaborative dataset into the training instructions to ensure a fair comparison 
+ 5.1.4. Evaluation Protocols 
+ For standard TSC tasks, we adopt the commonly used Average Travel Time (ATT) and Average Waiting Time (AWT) to evaluate the performance of models on conventional TSC scenarios. Lower values in ATT and AWT indicate better traffic efficiency brought by the models’ strategies. 
+ 5.2. Results on Conventional TSC Datasets (RQ1) 
+ We evaluate the performance of Traffic-R1 on conventional TSC tasks using public datasets that are widely adopted in TSC research. All learning-based methods are trained in the same simulated traffic environment as Traffic-R1 to fairly assess their zero-shot performance. The results, presented in Table 2 , indicate that Traffic-R1, in a zero-shot configuration, outperforms all baselines by a significant margin, demonstrating strong cross-dataset generalization capability, which is advantageous for real-world deployment.
+Additionally, we observe poor zero-shot performance for RL-based methods, with results that are even worse than those of traditional methods. This underperformance underscores their unsuitability for real-world deployment, where there are no conditions for them to iterate and train. It is noteworthy that some advanced LLMs achieve impressive zero-shot results due to their deep reasoning abilities, such as DeepSeek-R1-671B; however, their performance significantly decreases when distilled into a smaller parameter size, such as DeepSeek-R1-Distill-7B. We also report the full-shot comparison results in Appendix A.4 , where all RL-based models are trained on every test dataset following their original settings. In this setting, RL-based methods demonstrate strong advantages over traditional methods by continuously searching for better policies. Nevertheless, zero-shot Traffic-R1 still outperforms them through its internal human-like reasoning and traffic control policies. 
+ 5.3. OOD Incident Dealing Performance (RQ2) 
+ Focusing solely on performance in ideal simulated environments is inadequate and unreliable for real-world deployment. In RQ2, we investigate whether Traffic-R1 can effectively handle OOD traffic scenarios through its human-like reasoning. Unlike conventional tasks, incident handling requires models to utilize internal logic, commonsense, and a deep understanding of TSC, presenting challenges for traditional RL-based models and even LLM-based methods. 
+ We categorize OOD tasks into two types: 1. local intersection incidents , which occur at a single intersection and do not directly affect others (e.g., a traffic accident), and 2. network-wide incidents , which involve emergency vehicles that impact the entire network and require coordinated responses across multiple intersections (e.g., an ambulance navigating through the network).
+For local intersection incidents , we use Emergency Action Accuracy (EAA), defined as the ratio of correct actions taken by the model within the emergency incident dataset, to evaluate the model’s ability to respond accurately to incidents. For network-wide incidents , we adapt Average Emergency Travel Time (AETT) and Average Emergency Waiting Time (AEWT) for emergency vehicles from ( Wang et al. 2024 ) to assess model effectiveness. We evaluate all models based on these two types of incidents, with results presented in Table 3 . The findings highlight two key strengths of Traffic-R1: 
+ • 
+ Stable OOD scenario generalization. The proposed Traffic-R1 achieves stable performance across various OOD scenarios, surpassing most general LLMs, which are larger and slower to deploy. Specifically, Traffic-R1 outperforms LLMLight, a model instruction finetuned for TSC, by a significant margin of over 30% across all metrics. This demonstrates that Traffic-R1’s human-like reasoning effectively comprehend traffic knowledge and adapts to diverse scenarios, rather than repeat and imitation. 
+ • 
+ Lightweight and efficient. With only 3 billion parameters, Traffic-R1 achieves stable performance on these tasks, surpassing the capabilities of traditional baselines and matching advanced LLMs while using only 1% of their parameters and significantly lower deployment requirements. Notably, Traffic-R1 excels in handling network-wide incidents requiring multi-intersection coordination, demonstrating that our asynchronous communication network effectively enables the LLM-based TSC model to perform tacitly in complex, multi-intersection TSC systems. 
+ Table 3. OOD Incident Dealing Performance Evaluation. “-” indicates the method is entirely inadequate for the task. 
+ Method 
+ Parameter Size 
+ Local 
+ Network-wide 
+ EAA ↑ \uparrow 
+ AETT ↓ \downarrow 
+ AEWT ↓ \downarrow 
+ Random 
+ n.a. 
+ 0.25 
+ 614.45 
+ 97.42 
+ MaxPressure 
+ n.a. 
+ - 
+ 287.94 
+ 21.87 
+ Advanced-CoLight 
+ n.a. 
+ - 
+ 286.32 
+ 24.53 
+ LALight 
+ 72B 
+ 0.82 
+ 234.42 
+ 12.32 
+ LLMLight 
+ 7B 
+ 0.42 
+ 273.55 
+ 15.21 
+ Qwen2.5 (large) 
+ 72B 
+ 0.88 
+ 232.54 
+ 10.53 
+ DeepSeek-R1 
+ 672B 
+ 0.93 
+ 2 23.19 
+ 1 0.14 
+ Traffic-R1 
+ 3B 
+ 0 .85 
+ 215.58 
+ 7.98 
+ 5.4. Discussion of RL-based Finetuning (RQ3) 
+ We proposes a new RL-based two-stage finetuning paradigm for training LLMs instead of traditional instruction finetuning in TSC tasks. To further validate its advantages, we conduct detailed comparisons and discussion in this section. We adopt the LLMLight ( Lai et al. 2023 ) as a representative framework of instruction finetuning. For a fair comparison, we upgrade the base model of LLMLight from Qwen2 to Qwen2.5, matching the base model of Traffic-R1. We follow the same pipeline as Traffic-R1, using traditional RL methods to search for optimal action trajectories in our open-world RL environment. Additionally, we use GPT-4 to generate explanations for trajectories and expert-collaborative QA samples to construct the instruction dataset. After training, we evaluate the models in two dimensions: 1. TSC performance: We assess the zero-shot TSC capabilities of the two fine-tuned LLMs and the base model, quantifying the results by setting the base model’s performance at 0.5. The performance of the other models is computed based on their average improvement in ATT and AWT across all datasets. 2. General capabilities: we evaluate reasoning, instruction following, and inner commonsense on public benchmarks ( Team 2024 ) to examine the models’ foundational capacities, these capacities further indicate the potential and stability of the finetuned model for real-world wild deployment.
+The results, shown in Figure 5 , highlight two key findings regarding RL-based finetuning for LLMs in traffic systems: 
+ Figure 5. Comparison results for models’ capacities. 
+ • 
+ From imitation to human-like reasoning. Traffic-R1 achieves significantly better zero-shot performance across various TSC tasks compared to the instruction finetuned model, which exhibits unsatisfactory performance under the same zero-shot settings. The performance gap, despite identical training data and environments, reveals the limitations of instruction finetuning: models tend to memorize and imitate synthetic training data unless provided with a large, high-quality, and comprehensive dataset. In contrast, our RL-based finetuning encourages models to develop internal reasoning by promoting self-exploration and iteration during training, ensuring superior zero-shot TSC performance. 
+ • 
+ Complete general capabilities. Without a comprehensive dataset and tailored training settings, instruction finetuning often causes LLMs to lose general capabilities while adapting to training samples. This issue is particularly pronounced in traffic tasks, which differs significantly from general LLM tasks. The model trained under the LLMLight framework shows a substantial reduction in general capabilities and performs worse in other scenarios compared to base model. However, our RL-based framework mitigates catastrophic forgetting through self-rollout samples and KL divergence guidance. This approach constrains the base model to evolve within a controlled parameter space, avoiding simple memorization and promoting deeper, more efficient optimization for better comprehensive performances. 
+ 5.5. Ablation Study (RQ4) 
+ To assess the contribution of each component of Traffic-R1 to its performance, we developed the following model variants for our ablation study: 
+ • 
+ (-) Expert. This variant excludes the human-informed RL stage and is trained solely using open-world exploration. 
+ • 
+ (-) Open-world. This variant excludes the open-world RL stage during training. 
+ • 
+ (-) Communicate. This variant removes the asynchronous communication mechanism and operates without communication. 
+ We present the ablation results for Traffic-R1 and its variants on both conventional traffic scenarios and OOD scenarios in Figure 6 . Our findings are summarized as follows: 1) The human-informed RL stage is necessary to establish foundational TSC knowledge, enabling stable exploration in the subsequent open-world RL stage. 2) The open-world RL stage is effective in unlocking the model’s potential to achieve superior performance. 3) Asynchronous communication is critical for multi-intersection coordination tasks but is not determinative for conventional traffic scenarios. 
+ Figure 6. Ablation study on conventional and OOD tasks. 
+ Figure 7. Online and offline dispatch framework 
+ 6. Real-world deployment 
+ Pipeline. 
+Traffic-R1 is deployed on a major real-world traffic platform in a large Chinese city (name withheld for privacy), managing 10 key intersections and serving over 55,000 drivers daily. These intersections are primary junctions responsible for four directions within the road network and are interconnected by distances of approximately 600 to 800 meters. The road network is located in a commercial area of the city, characterized by heavy and variable traffic flow loads during different peak hours. The peak daily vehicle flow at one intersection can reach up to 21,000, indicating a significant traffic load.
+Unlike traditional simulated environments, these real-world main intersections have more lanes in each direction. To simplify the complexity of inputs and reasoning, we merge the lanes with the same flow direction. Additionally, a passenger phase is strictly added to the phase list at these intersections during morning and evening commute hours. This adjustment disrupts the standard phases and requires a robust TSC capacity from the model to effectively manage the increased complexity. 
+ Integrating Traffic-R1 into a real-world TSC system presents several challenges, with the first being the accurate sensing of real-time traffic conditions and their conversion into formats readable by the LLM. To address this, we developed an online traffic sensing system that utilizes a finetuned Grounding DINO model for traffic object recognition, along with millimeter-wave radar to measure the distance of objects from intersections. As shown in Figure 8 , a road camera mounted on the traffic light provides clear 2D visual information of vehicles in each lane, while the millimeter-wave radar complements this by measuring the distance between vehicles and the intersection. 
+ Figure 8. In-suit traffic sensing devices on road intersections 
+ While the sensing system provides continuous traffic observation for each intersection with the same format of simulation environment, deploying the model in the real world cannot rely on the straightforward, fully online mechanisms used in simulations due to mandatory government oversight for safety and security. As illustrated in Figure 7 , we designed an integrated online and offline dispatch framework to meet these practical requirements, enabling Traffic-R1 to function as both a traffic marshal and a traffic plan designer. The online dispatch pipeline handles real-time incident response, while the offline dispatch pipeline manages routine TSC operations. In the offline pipeline, traffic observations are abstracted into spatio-temporal traffic flow representations for each intersection. These flows are analysis by a LGBM algorithm with spatio-temporal embeddings for predicting further trends. Specifically, we use 30 days of historical data to forecast traffic patterns for the next day. Traffic-R1 then generates a preliminary action plan based on these predictions. This plan undergoes human evaluation and revision by relevant authorities before being implemented. 
+ Post-launch Performance. 
+We evaluate the post-launch performance of Traffic-R1 through a parallel experiment comparing our pipeline with original pipeline. The original pipeline relies on human-labor with for action plan design and incident dealing. We deploy the two pipelines to perform traffic control on an alternating weekly basis for a total of 6 weeks, and record the daily average, maximum queue length of busy hours (4pm to 7:30 pm) and human working hours of all intersections in the network, as presented in Table 4 . To avoid interference, data collected during weekend and holidays are discarded. Results show the Traffic-R1 significantly enhances the real-world traffic control system by efficient human-like reasoning and decisions, which greatly exceed the working efficiency of human experts and save human labor with stable performance. 
+ Table 4. Real-world parallel test results spanning 6 weeks. 
+ Method 
+ Average Queue ↓ \downarrow 
+ Maximum Queue ↓ \downarrow 
+ Working Hours ↓ \downarrow 
+ Original Pipeline 
+ 34.5 
+ 50.3 
+ 2+ 
+ Traffic-R1 
+ 31.3 
+ 48.1 
+ 0.5+ 
+ #Improvement 
+ 9.3% 
+ 4.4% 
+ ∼ \sim 75% 
+ 7. Conclusion and Future Work 
+ In this paper, we present Traffic-R1, a reinforced LLM designed for real-world TSC systems, capable of human-like reasoning. We propose a novel two-stage reinforcement learning strategy and a network communication framework to develop the LLM into a foundational model for traffic control that functions like a human traffic agent. Evaluations on conventional TSC and traffic incident handling demonstrate its superiority over existing methods, while real-world experiments further indicate its value for industrial deployment. Future work can focus on exploring reinforced vision-language models to enable direct reasoning and decision-making based on road vision information, enhancing efficiency and deployment convenience. Additionally, efforts can aim to mitigate hallucination-related errors caused by LLMs within the communication process in the traffic network through more robust network designs or model-level solutions. 
+ References 
+ (1) 
+ Abdulhai et al . (2003) 
+Baher Abdulhai, Rob Pringle, and Grigoris J Karakoulas. 2003.
+ Reinforcement learning for true adaptive traffic signal control.
+ Journal of Transportation Engineering 129, 3 (2003), 278–285.
+ Agarwal et al . (2024) 
+Chirag Agarwal, Sree Harsha Tanneru, and Himabindu Lakkaraju. 2024.
+ Faithfulness vs. plausibility: On the (un) reliability of explanations from large language models.
+ arXiv preprint arXiv:2402.04614 (2024).
+ Bai et al . (2022) 
+Yuntao Bai, Andy Jones, Kamal Ndousse, Amanda Askell, Anna Chen, Nova DasSarma, Dawn Drain, Stanislav Fort, Deep Ganguli, Tom Henighan, et al . 2022.
+ Training a helpful and harmless assistant with reinforcement learning from human feedback.
+ arXiv preprint arXiv:2204.05862 (2022).
+ Cao et al . (2024) 
+Yuji Cao, Huan Zhao, Yuheng Cheng, Ting Shu, Yue Chen, Guolong Liu, Gaoqi Liang, Junhua Zhao, Jinyue Yan, and Yun Li. 2024.
+ Survey on large language model-enhanced reinforcement learning: Concept, taxonomy, and methods.
+ IEEE Transactions on Neural Networks and Learning Systems (2024).
+ Chen et al . (2020) 
+Chacha Chen, Hua Wei, Nan Xu, Guanjie Zheng, Ming Yang, Yuanhao Xiong, Kai Xu, and Zhenhui Li. 2020.
+ Toward a thousand lights: Decentralized deep reinforcement learning for large-scale traffic signal control. In Proceedings of the AAAI conference on artificial intelligence , Vol. 34. 3414–3421.
+ Chen et al . (2022) 
+Rex Chen, Fei Fang, and Norman Sadeh. 2022.
+ The real deal: A review of challenges and opportunities in moving reinforcement learning-based traffic signal control systems towards reality.
+ arXiv preprint arXiv:2206.11996 (2022).
+ Chung et al . (2024) 
+Hyung Won Chung, Le Hou, Shayne Longpre, Barret Zoph, Yi Tay, William Fedus, Yunxuan Li, Xuezhi Wang, Mostafa Dehghani, Siddhartha Brahma, et al . 2024.
+ Scaling instruction-finetuned language models.
+ Journal of Machine Learning Research 25, 70 (2024), 1–53.
+ Dettmers et al . (2023) 
+Tim Dettmers, Artidoro Pagnoni, Ari Holtzman, and Luke Zettlemoyer. 2023.
+ Qlora: Efficient finetuning of quantized llms.
+ Advances in neural information processing systems 36 (2023), 10088–10115.
+ Gao et al . (2023) 
+Leo Gao, John Schulman, and Jacob Hilton. 2023.
+ Scaling laws for reward model overoptimization. In International Conference on Machine Learning . PMLR, 10835–10866.
+ Glanois et al . (2024) 
+Claire Glanois, Paul Weng, Matthieu Zimmer, Dong Li, Tianpei Yang, Jianye Hao, and Wulong Liu. 2024.
+ A survey on interpretable reinforcement learning.
+ Machine Learning 113, 8 (2024), 5847–5890.
+ Ke et al . (2025) 
+Zixuan Ke, Fangkai Jiao, Yifei Ming, Xuan-Phi Nguyen, Austin Xu, Do Xuan Long, Minzhi Li, Chengwei Qin, Peifeng Wang, Silvio Savarese, et al . 2025.
+ A survey of frontiers in llm reasoning: Inference scaling, learning to reason, and agentic systems.
+ arXiv preprint arXiv:2504.09037 (2025).
+ Koonce et al . (2008) 
+Peter Koonce et al . 2008.
+ Traffic signal timing manual .
+ Technical Report. United States. Federal Highway Administration.
+ Krajzewicz et al . (2012) 
+Daniel Krajzewicz, Jakob Erdmann, Michael Behrisch, Laura Bieker, et al . 2012.
+ Recent development and applications of SUMO-Simulation of Urban MObility.
+ International journal on advances in systems and measurements 5, 3&4 (2012), 128–138.
+ Lai et al . (2023) 
+Siqi Lai, Zhao Xu, Weijia Zhang, Hao Liu, and Hui Xiong. 2023.
+ Llmlight: Large language models as traffic signal control agents.
+ arXiv preprint arXiv:2312.16044 (2023).
+ Liu et al . (2024) 
+Aixin Liu, Bei Feng, Bing Xue, Bingxuan Wang, Bochao Wu, Chengda Lu, Chenggang Zhao, Chengqi Deng, Chenyu Zhang, Chong Ruan, et al . 2024.
+ Deepseek-v3 technical report.
+ arXiv preprint arXiv:2412.19437 (2024).
+ Mahavar and Juremalani (2018) 
+Vaishali Mahavar and Jayesh Juremalani. 2018.
+ Literature review on traffic control systems used worldwide.
+ Journal of Emerging Technologies and Innovative Research 5, 5 (2018), 77–79.
+ Malin et al . (2025) 
+Ben Malin, Tatiana Kalganova, and Nikolaos Boulgouris. 2025.
+ A review of faithfulness metrics for hallucination assessment in Large Language Models.
+ IEEE Journal of Selected Topics in Signal Processing (2025).
+ Mandhare et al . (2018) 
+Pallavi A Mandhare, Vilas Kharat, and CY Patil. 2018.
+ Intelligent road traffic control system for traffic congestion: a perspective.
+ International Journal of Computer Sciences and Engineering 6, 07 (2018), 2018.
+ Mei et al . (2024) 
+Hao Mei, Xiaoliang Lei, Longchao Da, Bin Shi, and Hua Wei. 2024.
+ Libsignal: An open library for traffic signal control.
+ Machine Learning 113, 8 (2024), 5235–5271.
+ Mercader et al . (2020) 
+Pedro Mercader, Wasim Uwayid, and Jack Haddad. 2020.
+ Max-pressure traffic controller based on travel times: An experimental analysis.
+ Transportation Research Part C: Emerging Technologies 110 (2020), 275–290.
+ Minaee et al . (2024) 
+Shervin Minaee, Tomas Mikolov, Narjes Nikzad, Meysam Chenaghlu, Richard Socher, Xavier Amatriain, and Jianfeng Gao. 2024.
+ Large language models: A survey.
+ arXiv preprint arXiv:2402.06196 (2024).
+ Müller et al . (2021) 
+Arthur Müller, Vishal Rangras, Tobias Ferfers, Florian Hufen, Lukas Schreckenberg, Jürgen Jasperneite, Georg Schnittker, Michael Waldmann, Maxim Friesen, and Marco Wiering. 2021.
+ Towards real-world deployment of reinforcement learning for traffic signal control. In 2021 20th IEEE International Conference on Machine Learning and Applications (ICMLA) . IEEE, 507–514.
+ Oroojlooy et al . (2020) 
+Afshin Oroojlooy, Mohammadreza Nazari, Davood Hajinezhad, and Jorge Silva. 2020.
+ Attendlight: Universal attention-based reinforcement learning model for traffic signal control.
+ Advances in Neural Information Processing Systems 33 (2020), 4079–4090.
+ Ouyang et al . (2022) 
+Long Ouyang, Jeffrey Wu, Xu Jiang, Diogo Almeida, Carroll Wainwright, Pamela Mishkin, Chong Zhang, Sandhini Agarwal, Katarina Slama, Alex Ray, et al . 2022.
+ Training language models to follow instructions with human feedback.
+ Advances in neural information processing systems 35 (2022), 27730–27744.
+ Qadri et al . (2020) 
+Syed Shah Sultan Mohiuddin Qadri, Mahmut Ali Gökçe, and Erdinç Öner. 2020.
+ State-of-art review of traffic signal control methods: challenges and opportunities.
+ European transport research review 12, 1 (2020), 55.
+ Ramamurthy et al . (2022) 
+Rajkumar Ramamurthy, Prithviraj Ammanabrolu, Kianté Brantley, Jack Hessel, Rafet Sifa, Christian Bauckhage, Hannaneh Hajishirzi, and Yejin Choi. 2022.
+ Is reinforcement learning (not) for natural language processing: Benchmarks, baselines, and building blocks for natural language policy optimization.
+ arXiv preprint arXiv:2210.01241 (2022).
+ Rasheed et al . (2020) 
+Faizan Rasheed, Kok-Lim Alvin Yau, Rafidah Md Noor, Celimuge Wu, and Yeh-Ching Low. 2020.
+ Deep reinforcement learning for traffic signal control: A review.
+ IEEE Access 8 (2020), 208016–208044.
+ Ruan et al . (2024) 
+Jingqing Ruan, Ziyue Li, Hua Wei, Haoyuan Jiang, Jiaming Lu, Xuantang Xiong, Hangyu Mao, and Rui Zhao. 2024.
+ Coslight: Co-optimizing collaborator selection and decision-making to enhance traffic signal control. In Proceedings of the 30th ACM SIGKDD Conference on Knowledge Discovery and Data Mining . 2500–2511.
+ Serafini and Ukovich (1989) 
+Paolo Serafini and Walter Ukovich. 1989.
+ A mathematical model for the fixed-time traffic control problem.
+ European Journal of Operational Research 42, 2 (1989), 152–165.
+ Srinivasan et al . (2006) 
+Dipti Srinivasan, Min Chee Choy, and Ruey Long Cheu. 2006.
+ Neural networks for real-time traffic signal control.
+ IEEE Transactions on intelligent transportation systems 7, 3 (2006), 261–272.
+ Team (2024) 
+ModelScope Team. 2024.
+ EvalScope: Evaluation Framework for Large Models.
+ https://github.com/modelscope/evalscope 
+ Thunig et al . (2019) 
+Theresa Thunig, Robert Scheffler, Martin Strehler, and Kai Nagel. 2019.
+ Optimization and simulation of fixed-time traffic signal control in real-world applications.
+ Procedia Computer Science 151 (2019), 826–833.
+ Varaiya (2013) 
+Pravin Varaiya. 2013.
+ Max pressure control of a network of signalized intersections.
+ Transportation Research Part C: Emerging Technologies 36 (2013), 177–195.
+ Vouros (2022) 
+George A Vouros. 2022.
+ Explainable deep reinforcement learning: state of the art and challenges.
+ Comput. Surveys 55, 5 (2022), 1–39.
+ Wang et al . (2025a) 
+Maonan Wang, Yirong Chen, Aoyu Pang, Yuxin Cai, Chung Shue Chen, Yuheng Kan, and Man-On Pun. 2025a.
+ VLMLight: Traffic Signal Control via Vision-Language Meta-Control and Dual-Branch Reasoning.
+ arXiv preprint arXiv:2505.19486 (2025).
+ Wang et al . (2024) 
+Maonan Wang, Aoyu Pang, Yuheng Kan, Man-On Pun, Chung Shue Chen, and Bo Huang. 2024.
+ LLM-assisted light: Leveraging large language model capabilities for human-mimetic traffic signal control in complex urban environments.
+ arXiv preprint arXiv:2403.08337 (2024).
+ Wang et al . (2025b) 
+Zihan Wang, Kangrui Wang, Qineng Wang, Pingyue Zhang, Linjie Li, Zhengyuan Yang, Xing Jin, Kefan Yu, Minh Nhat Nguyen, Licheng Liu, Eli Gottlieb, Yiping Lu, Kyunghyun Cho, Jiajun Wu, Li Fei-Fei, Lijuan Wang, Yejin Choi, and Manling Li. 2025b.
+ RAGEN: Understanding Self-Evolution in LLM Agents via Multi-Turn Reinforcement Learning.
+ arXiv:2504.20073 [cs.LG]
+ https://arxiv.org/abs/2504.20073 
+ Wei et al . (2019) 
+Hua Wei, Nan Xu, Huichu Zhang, Guanjie Zheng, Xinshi Zang, Chacha Chen, Weinan Zhang, Yanmin Zhu, Kai Xu, and Zhenhui Li. 2019.
+ Colight: Learning network-level cooperation for traffic signal control. In Proceedings of the 28th ACM international conference on information and knowledge management . 1913–1922.
+ Wei et al . (2021) 
+Hua Wei, Guanjie Zheng, Vikash Gayah, and Zhenhui Li. 2021.
+ Recent advances in reinforcement learning for traffic signal control: A survey of models and evaluation.
+ ACM SIGKDD explorations newsletter 22, 2 (2021), 12–18.
+ Wei et al . (2018) 
+Hua Wei, Guanjie Zheng, Huaxiu Yao, and Zhenhui Li. 2018.
+ Intellilight: A reinforcement learning approach for intelligent traffic light control. In Proceedings of the 24th ACM SIGKDD international conference on knowledge discovery & data mining . 2496–2505.
+ Wu et al . (2021) 
+Qiang Wu, Liang Zhang, Jun Shen, Linyuan Lü, Bo Du, and Jianqing Wu. 2021.
+ Efficient pressure: Improving efficiency for signalized intersections.
+ arXiv preprint arXiv:2112.02336 (2021).
+ Wu et al . (2025) 
+Xiao-Kun Wu, Min Chen, Wanyi Li, Rui Wang, Limeng Lu, Jia Liu, Kai Hwang, Yixue Hao, Yanru Pan, Qingguo Meng, et al . 2025.
+ Llm fine-tuning: Concepts, opportunities, and challenges.
+ Big Data and Cognitive Computing 9, 4 (2025), 87.
+ Xu et al . (2025) 
+Fengli Xu, Qianyue Hao, Zefang Zong, Jingwei Wang, Yunke Zhang, Jingyi Wang, Xiaochong Lan, Jiahui Gong, Tianjian Ouyang, Fanjin Meng, et al . 2025.
+ Towards large reasoning models: A survey of reinforced reasoning with large language models.
+ arXiv preprint arXiv:2501.09686 (2025).
+ Yau et al . (2017) 
+Kok-Lim Alvin Yau, Junaid Qadir, Hooi Ling Khoo, Mee Hong Ling, and Peter Komisarczuk. 2017.
+ A survey on reinforcement learning models and algorithms for traffic signal control.
+ ACM Computing Surveys (CSUR) 50, 3 (2017), 1–38.
+ Ye et al . (2019) 
+Bao-Lin Ye, Weimin Wu, Keyu Ruan, Lingxi Li, Tehuan Chen, Huimin Gao, and Yaobin Chen. 2019.
+ A survey of model predictive control methods for traffic signal control.
+ IEEE/CAA Journal of Automatica Sinica 6, 3 (2019), 623–640.
+ Yu et al . (2025) 
+Qiying Yu, Zheng Zhang, Ruofei Zhu, Yufeng Yuan, Xiaochen Zuo, Yu Yue, Weinan Dai, Tiantian Fan, Gaohong Liu, Lingjun Liu, et al . 2025.
+ Dapo: An open-source llm reinforcement learning system at scale.
+ arXiv preprint arXiv:2503.14476 (2025).
+ Yuan et al . (2025) 
+Zirui Yuan, Siqi Lai, and Hao Liu. 2025.
+ Collmlight: Cooperative large language model agents for network-wide traffic signal control.
+ arXiv preprint arXiv:2503.11739 (2025).
+ Zhang et al . (2019) 
+Huichu Zhang, Siyuan Feng, Chang Liu, Yaoyao Ding, Yichen Zhu, Zihan Zhou, Weinan Zhang, Yong Yu, Haiming Jin, and Zhenhui Li. 2019.
+ Cityflow: A multi-agent reinforcement learning environment for large scale city traffic scenario. In The world wide web conference . 3620–3624.
+ Zhang et al . (2022) 
+Liang Zhang, Qiang Wu, Jun Shen, Linyuan Lü, Bo Du, and Jianqing Wu. 2022.
+ Expression might be enough: Representing pressure and demand for reinforcement learning based traffic signal control. In International Conference on Machine Learning . PMLR, 26645–26654.
+ Zhao et al . (2011) 
+Dongbin Zhao, Yujie Dai, and Zhen Zhang. 2011.
+ Computational intelligence in urban traffic signal control: A survey.
+ IEEE Transactions on Systems, Man, and Cybernetics, Part C (Applications and Reviews) 42, 4 (2011), 485–494.
+ Zhao et al . (2024) 
+Guoyang Zhao, Fulong Ma, Weiqing Qi, Chenguang Zhang, Yuxuan Liu, Ming Liu, and Jun Ma. 2024.
+ TSCLIP: Robust CLIP Fine-Tuning for Worldwide Cross-Regional Traffic Sign Recognition.
+ arXiv preprint arXiv:2409.15077 (2024).
+ Appendix A Appendix 
+ A.1. Input Template for Rollout 
+ Input Templates for LLM Rollout 
+ System: You are a helpful traffic control agent.
+ TSC Description: The crossroad connects two roads: north-south and east-west, with the traffic light at their intersection. Each road is divided into two sections (e.g., north and south for the north-south road) and each section has two lanes: a through lane and a left-turn lane…
+ Traffic Observation: Signal: ETWT
+ Allowed lanes: Eastern and western through lanes
+ - Early queued: 2 (East), 1 (West), 3 (Total)
+ - Segment 1: 0 (East), 0 (West), 0 (Total)
+ - Segment 2: 1 (East), 0 (West), 1 (Total)
+ …
+ Format Instruction: You can only choose one of the signals listed above.
+You FIRST think about the reasoning process for your choice as an internal monologue and then provide the final answer.
+Your think process MUST BE put in <think>…</think> tags. The final choice MUST BE put in \boxed{ }. 
+ A.2. Traffic Incident Data 
+ In this work, we evaluate the models’ incident handling capabilities by collecting traffic emergency incident recordings from traffic management departments. We summarize these recordings into 200 representative textual examples to simulate the occurrence of out-of-distribution (OOD) traffic incidents. Below, we present selected anonymized examples of these incident recordings: 
+ Examples for testing traffic incidents 
+ ID 1: At this intersection, a traffic accident in the eastbound lane is causing significant congestion.
+ Response Action: ETWT 
+ ID 2: At this intersection, a pedestrian was struck in the northbound crosswalk.
+ Response Action: ETWT/NLSL 
+ ID 3: Report from the nearby intersection to the north: Heavy southbound traffic is approaching.
+ Response Action: NTST/NLSL 
+ ID 4: At this intersection, a school bus is stopped in the eastbound lane, loading students.
+ Response Action: NTST 
+ ID 5: At this intersection, a group of pedestrians is blocking the westbound crosswalk.
+ Response Action: NTST 
+ ID 6: Report from the nearby intersection to the east: A fire hydrant crew is slowing westbound traffic.
+ Response Action: NTST/ELWL 
+ ID 7: At this intersection, vehicles spun out in the westbound lane.
+ Response Action: NTST 
+ ID 8: At this intersection, for the XXX event, a marathon is passing through the eastbound lane.
+ Response Action: ETWT 
+ ID 9: At this intersection, a road rage incident was reported in the northbound lane due to a heavy traffic jam.
+ Response Action: NTST 
+ ID 10: At this intersection, it is 5:30 PM, the nearby western school is scheduled to dismiss, leading to increased vehicular traffic for student pick-up.
+ Response Action: ETWT 
+ Table 5. Performance comparison on conventional traffic signal control tasks (the smaller the better). The best results are in bold and second-best results are u nderlined. 
+ Models 
+ Jinan1 
+ Jinan2 
+ Jinan3 
+ Hangzhou1 
+ Hangzhou2 
+ Paradigm 
+ ATT 
+ AWT 
+ ATT 
+ AWT 
+ ATT 
+ AWT 
+ ATT 
+ AWT 
+ ATT 
+ AWT 
+ FixedTime 
+ 453.41 
+ 51.32 
+ 370.34 
+ 35.15 
+ 384.53 
+ 36.95 
+ 497.54 
+ 36.41 
+ 408.53 
+ 53.94 
+ Traditional 
+ Methods 
+ Maxpressure 
+ 274.34 
+ 32.04 
+ 246.35 
+ 22.56 
+ 245.66 
+ 24.31 
+ 289.55 
+ 21.52 
+ 349.53 
+ 67.52 
+ LLMLight-7B 
+ 274.47 
+ 33.66 
+ 256.53 
+ 28.66 
+ 247.11 
+ 28.27 
+ 289.31 
+ 25.53 
+ 331.38 
+ 51.79 
+ RL- 
+ based 
+ Methods 
+ MPLight 
+ 310.54 
+ 50.45 
+ 270.14 
+ 48.03 
+ 272.37 
+ 42.91 
+ 319.32 
+ 44.05 
+ 365.42 
+ 69.85 
+ AttendLight 
+ 280.11 
+ 47.59 
+ 250.53 
+ 34.72 
+ 251.34 
+ 36.42 
+ 288.94 
+ 27.84 
+ 338.41 
+ 55.58 
+ CoLight 
+ 272.44 
+ 41.09 
+ 250.41 
+ 38.59 
+ 248.84 
+ 39.94 
+ 294.61 
+ 42.18 
+ 335.32 
+ 61.11 
+ Efficient-Colight 
+ 2 63.16 
+ 28.98 
+ 240.34 
+ 2 1.32 
+ 2 38.23 
+ 20.34 
+ 301.45 
+ 33.43 
+ 334.94 
+ 47.19 
+ Advanced-CoLight 
+ 247.31 
+ 32.54 
+ 235.78 
+ 25.96 
+ 242.56 
+ 27.55 
+ 285.32 
+ 24.11 
+ 323.19 
+ 52.56 
+ Llama3.3-70B 
+ 272.41 
+ 33.53 
+ 244.55 
+ 22.04 
+ 243.53 
+ 25.43 
+ 281.44 
+ 17.65 
+ 326.42 
+ 45.56 
+ Zero- 
+ shot 
+ Methods 
+ Qwen 2.5-72B 
+ 275.42 
+ 33.15 
+ 251.41 
+ 25.49 
+ 264.21 
+ 24.54 
+ 282.13 
+ 17.54 
+ 329.34 
+ 39.34 
+ GPT 3.5-turbo 
+ 337.32 
+ 39.98 
+ 328.19 
+ 37.08 
+ 343.19 
+ 34.35 
+ 293.42 
+ 23.45 
+ 348.59 
+ 33.45 
+ GPT-4o 
+ 281.58 
+ 3 0.11 
+ 259.61 
+ 24.71 
+ 258.85 
+ 24.17 
+ 280.48 
+ 1 6.32 
+ 3 25.48 
+ 3 2.26 
+ DeepSeek-R1-671B 
+ 279.11 
+ 31.85 
+ 258.43 
+ 21.67 
+ 262.21 
+ 27.87 
+ 2 78.565 
+ 17.81 
+ 335.53 
+ 30.19 
+ DeepSeek-R1-Distill-7B 
+ 331.45 
+ 38.91 
+ 311.43 
+ 31.43 
+ 288.42 
+ 29.23 
+ 291.32 
+ 19.56 
+ 344.73 
+ 33.72 
+ Traffic-R1-3B 
+ 270.34 
+ 27.95 
+ 2 39.53 
+ 21.11 
+ 238.03 
+ 2 3.17 
+ 277.83 
+ 15.51 
+ 324.11 
+ 33.14 
+ A.3. Introduction of baselines 
+ We compare our method against three categories of approaches for traffic control. Below is detailed information about these methods: 
+ • 
+ Traditional Methods: This category includes conventional traffic signal control (TSC) methods, which are straightforward and widely adopted in real-world traffic systems. 
+ – 
+ FixedTime ( Koonce et al. 2008 ) : A policy that assigns a fixed cycle length with predefined phase splits across all phases. 
+ – 
+ MaxPressure ( Varaiya 2013 ) : A control strategy that selects the phase with the highest pressure to optimize traffic flow. 
+ • 
+ RL-based Methods: These methods normally require training and interaction with their policies on each evaluation dataset. 
+ – 
+ LLMLight-7B ( Lai et al. 2023 ) : A SOTA LLM-based TSC method that employs the Advanced-CoLight framework to interact and generate action policies for each dataset. It utilizes GPT-4 to generate explanations for each action, which, along with Advanced-CoLight generated actions, are used for instruction finetuning to enable the LLM base model to emulate TSC capabilities. 
+ – 
+ MPLight ( Chen et al. 2020 ) : A method based on the FRAP model that uses pressure as both observation and reward to optimize TSC. 
+ – 
+ AttendLight ( Oroojlooy et al. 2020 ) : A method that employs attention mechanism to construct phase features and predict its transition probabilities. 
+ – 
+ CoLight ( Wei et al. 2019 ) : A method that uses a graph attention network to represent inter-intersection communication within a RL framework. 
+ – 
+ Efficient-CoLight ( Wu et al. 2021 ) : An enhanced version of the CoLight model that incorporates efficient pressure as an observation to improve decision-making in TSC. 
+ – 
+ Advanced-CoLight ( Zhang et al. 2022 ) : A SOTA RL-based method that enhances CoLight by integrating efficient pressure and advanced traffic state features, such as effective running vehicles, to optimize decision-making capabilities. 
+ • 
+ Zero-shot Methods: These methods (including Traffic-R1) are represented by their zero-shot working ability on every dataset. In our experiment, the models are not trained on any TSC evaluation dataset and carry out traffic control based on their inner policies and knowledge. 
+ – 
+ CoLLMLight-8B ( Yuan et al. 2025 ) : An enhanced version of LLMLight ( Lai et al. 2023 ) that incorporates neighbor information into consideration. The model is trained using an instruction fine-tuning framework on a synthetic dataset and demonstrates improved zero-shot performance compared to LLMLight. 
+ – 
+ Llama3.3-70B: A LLM developed by Meta AI, featuring 70 billion parameters and a 128K token context window. It offers performance comparable to much larger models in zero-shot tasks, with enhanced capabilities in tool calling and multilingual support. 
+ – 
+ Qwen2.5-72B: A LLM developed by Alibaba Cloud, with 72 billion parameters. It is designed for superior performance in zero-shot learning, particularly in coding, mathematics, and following complex instructions. 
+ – 
+ GPT-3.5-turbo: A variant of OpenAI’s GPT-3.5 model, finetuned for conversational applications. It excels in zero-shot dialogue systems and natural language processing tasks. 
+ – 
+ GPT-4o: OpenAI’s advancing multimodal language model that processes text, audio, and images. It provides advanced zero-shot capabilities across multiple tasks, with fast response times and cost efficiency. 
+ – 
+ DeepSeek-R1-671B: A massive language model with 671 billion parameters, developed by DeepSeek AI. It specializes in zero-shot reasoning, particularly in mathematics and coding, and is available as an open-source model. 
+ – 
+ DeepSeek-R1-Distill-7B: A Qwen2.5-based distilled version of DeepSeek-R1, featuring 7 billion parameters. It maintains competitive zero-shot performance in reasoning tasks through efficient distillation methods. 
+ Responses of Traffic-R1 in different scenarios 
+ Case 1: <think>Based on the current state of the intersection, Signal: ETWT (Eastern and Western through lanes) is the one that most significantly improves traffic conditions during the next phase. This is because this lane has 18 early queued vehicles and 13 approaching vehicles in Segment 3 , indicating a significant number of vehicles waiting to pass through and incoming huge traffic pressure . Approving this signal will allow these vehicles to proceed, easing the traffic flow.</think>
+ Case 2: <think>Based on the current state of the intersection, the signal phase that will most significantly improve traffic conditions during the next phase is NTST (Northern and southern through lanes). This is because only the southern through lane has approaching vehicles in Segment 1 , which indicates that there are vehicles waiting to enter the intersection. By allowing vehicles in the northern and southern through lanes to flow, this signal phase will help avoid the queue of approaching vehicles and improve overall traffic flow.</think>
+ Case 3: <think>Based on the current state of the intersection, the signal phase that will most significantly improve traffic conditions during the next phase is ETWT (Eastern and Western through lanes). Although the northern through lane has 20 early queued vehicles in Segment 2 , an ambulance is currently approaching from the east, heading west. Prioritizing ETWT is critical to ensure the ambulance passes through the intersection without delay , maintaining emergency response efficiency. This signal will also alleviate some traffic pressure by allowing eastern and western vehicles to proceed.</think>
+ Case 4: <think>Based on the current state of the intersection, the signal phase that will most significantly improve traffic conditions during the next phase is NTST (Northern and Southern pedestrian crossing). This is because a large number of students are waiting to cross from the northern to southern direction , indicating significant pedestrian demand. Activating this signal will allow these students to cross safely, reducing congestion at the crosswalk.</think>
+ Case 5: <think>Based on the current state of the intersection and the urgent message of an emergency fire truck approaching from the west, the signal phase that will most significantly improve traffic conditions during the next phase is ETWT (Eastern and Western through lanes). This is because both ETWT and NTST have comparable queues, with approximately 15 early queued vehicles each in Segment 2, but prioritizing ETWT ensures the fire truck’s swift passage . Activating this signal will clear the western lane, facilitating emergency access while also easing general traffic flow.</think>
+ A.4. More Experiment Result 
+ We evaluate the performance of Traffic-R1 on standard signal control tasks in full-shot settings. We adopt the original deployment configurations of all learning-based baseline models for training in the test environments, while Traffic-R1 is assessed directly in a zero-shot setting. The results, presented in Table 5 , show that Traffic-R1, in its zero-shot configuration, outperforms all baselines, including RL-based methods that underwent extensive training and optimization on the test datasets. Notably, some advanced LLMs achieve impressive performance comparable to SOTA RL-based methods, demonstrating the potential of LLMs to fully replace traditional RL-based methods in traffic control tasks. Furthermore, Traffic-R1 achieves better performance than SOTA LLMs (e.g., DeepSeek-R1-671B) while utilizing only 1% of their parameter size. 
+ A.5. Reasoning Cases of Traffic-R1 
+ We provide several representative reasoning processes generated by Traffic-R1 during experiments across different scenarios. The results clearly demonstrate the model’s comprehensive and logical reasoning ability in both conventional traffic situations and incident response tasks. The reasoning examples illustrate the model’s understanding of traffic control, including its focus on queued vehicles and approaching vehicles. The model independently makes trade-offs to achieve better traffic efficiency.
+Furthermore, when an incident occurs, Traffic-R1 accurately analyzes the situation and identifies optimal actions to address it, while even striving to both maximize traffic efficiency and respond to the incident’s needs. This showcases the model’s ability to balance multiple objectives in dynamic traffic environments. 
+ ◄ 
+ Feeling lucky? 
+ Conversion report 
+ Report an issue 
+ View original on arXiv ► 
+ Copyright 
+ Privacy Policy 
+ Generated by L a T e XML oxide 

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<net version="1.20" junctionCornerDetail="5" limitTurnSpeed="5.50">
+   <location netOffset="0,0" convBoundary="0,0,500,0" origBoundary="0,0,500,0" projParameter="!"/>
+   <edge id="ab" from="a" to="b" priority="1" numLanes="2" speed="13.89" shape="0,0 500,0">
+      <lane id="ab_0" index="0" speed="13.89" length="500" shape="0,-1.6 500,-1.6"/>
+      <lane id="ab_1" index="1" speed="13.89" length="500" shape="0,1.6 500,1.6"/>
+   </edge>
+   <edge id="ba" from="b" to="a" priority="1" numLanes="2" speed="13.89" shape="500,0 0,0">
+      <lane id="ba_0" index="0" speed="13.89" length="500" shape="500,-1.6 0,-1.6"/>
+      <lane id="ba_1" index="1" speed="13.89" length="500" shape="500,1.6 0,1.6"/>
+   </edge>
+   <junction id="a" type="dead_end" x="0" y="0" incLanes="ba_0 ba_1" intLanes="" shape="0,-6 0,6 0,0"/>
+   <junction id="b" type="dead_end" x="500" y="0" incLanes="ab_0 ab_1" intLanes="" shape="500,6 500,-6 500,0"/>
+</net>

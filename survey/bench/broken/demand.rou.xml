@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<routes>
+  <vType id="c" length="5" minGap="2.5" accel="2.6" decel="4.5" maxSpeed="13.89"/>
+  <flow id="f" type="c" begin="0" end="1800" vehsPerHour="1800" departLane="random" departSpeed="max">
+    <route edges="ab ba"/>
+  </flow>
+</routes>

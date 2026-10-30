@@ -1,0 +1,36 @@
+{
+  "_doc": {
+    "purpose": "Named demand scenarios read by assets/build_demand.py and by the sim. veh_h is vehicles per hour per boundary approach; scale multiplies veh_h and burst_mult.",
+    "scale_bursts": "when true, scale also lengthens platoons (gridlock needs both more cars and tighter bursts).",
+    "verdict": "what the validation harness should see, not what the generator assumes."
+  },
+  "scenarios": {
+    "baseline": {
+      "veh_h": 2000,
+      "end_s": 3600,
+      "burst_mult": 0.4,
+      "scale": 1.0,
+      "scale_bursts": false,
+      "verdict": "free-flowing: vehicles arrive, mean speed > 4 m/s, nothing sticks past 60 s",
+      "hops": "2-4"
+    },
+    "platoon": {
+      "veh_h": 3000,
+      "end_s": 3600,
+      "burst_mult": 1.0,
+      "scale": 1.0,
+      "scale_bursts": false,
+      "verdict": "queues form and drain: mean speed 2-5 m/s, some stalls 60-120 s, no permanent block",
+      "hops": "2-5"
+    },
+    "gridlock": {
+      "veh_h": 4500,
+      "end_s": 3600,
+      "burst_mult": 2.2,
+      "scale": 1.2,
+      "scale_bursts": true,
+      "verdict": "backed up grid: stalls persist and mean speed drops under 3 m/s",
+      "hops": "3-6"
+    }
+  }
+}

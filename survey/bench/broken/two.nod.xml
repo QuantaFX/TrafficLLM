@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2026-10-29T22:55:15.470195+08:00 by Eclipse SUMO netconvert 1.27.0
+<netconvertConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
+
+    <input>
+        <node-files value="two.nod.xml"/>
+        <edge-files value="two.edg.xml"/>
+    </input>
+
+    <output>
+        <output-file value="two.nod.xml"/>
+    </output>
+
+</netconvertConfiguration>
+-->
+
+<net version="1.20" junctionCornerDetail="5" limitTurnSpeed="5.50" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/net_file.xsd">
+
+    <location netOffset="0.00,0.00" convBoundary="0.00,0.00,500.00,0.00" origBoundary="0.00,0.00,500.00,0.00" projParameter="!"/>
+
+    <edge id=":a_0" function="internal">
+        <lane id=":a_0_0" index="0" speed="3.65" length="4.67" shape="0.00,1.60 -1.20,0.80 -1.60,0.00 -1.20,-0.80 0.00,-1.60"/>
+    </edge>
+    <edge id=":b_0" function="internal">
+        <lane id=":b_0_0" index="0" speed="3.65" length="4.67" shape="500.00,-1.60 501.20,-0.80 501.60,0.00 501.20,0.80 500.00,1.60"/>
+    </edge>
+
+    <edge id="ab" from="a" to="b" priority="2">
+        <lane id="ab_0" index="0" speed="13.89" length="500.00" shape="0.00,-4.80 500.00,-4.80"/>
+        <lane id="ab_1" index="1" speed="13.89" length="500.00" shape="0.00,-1.60 500.00,-1.60"/>
+    </edge>
+    <edge id="ba" from="b" to="a" priority="2">
+        <lane id="ba_0" index="0" speed="13.89" length="500.00" shape="500.00,4.80 0.00,4.80"/>
+        <lane id="ba_1" index="1" speed="13.89" length="500.00" shape="500.00,1.60 0.00,1.60"/>
+    </edge>
+
+    <junction id="a" type="priority" x="0.00" y="0.00" incLanes="ba_0 ba_1" intLanes=":a_0_0" shape="0.00,0.00 0.00,6.40 0.00,0.00">
+        <request index="0" response="0" foes="0" cont="0"/>
+    </junction>
+    <junction id="b" type="priority" x="500.00" y="0.00" incLanes="ab_0 ab_1" intLanes=":b_0_0" shape="500.00,0.00 500.00,-6.40 500.00,0.00">
+        <request index="0" response="0" foes="0" cont="0"/>
+    </junction>
+
+    <connection from="ab" to="ba" fromLane="1" toLane="1" via=":b_0_0" dir="t" state="M"/>
+    <connection from="ba" to="ab" fromLane="1" toLane="1" via=":a_0_0" dir="t" state="M"/>
+
+    <connection from=":a_0" to="ab" fromLane="0" toLane="1" dir="t" state="M"/>
+    <connection from=":b_0" to="ba" fromLane="0" toLane="1" dir="t" state="M"/>
+
+</net>

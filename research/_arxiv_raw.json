@@ -1,0 +1,433 @@
+{
+ "tsc_llm": [
+  [
+   "TOTAL",
+   "26"
+  ],
+  [
+   "http://arxiv.org/abs/2610.09563v2",
+   "2026-10-07",
+   "EvoSignal: LLM-Guided Evolutionary Design of Modular Traffic Signal Control Programs"
+  ],
+  [
+   "http://arxiv.org/abs/2609.22746v1",
+   "2026-09-19",
+   "ProcessLight: Process Supervision for Large Language Model Based Traffic Signal Control"
+  ],
+  [
+   "http://arxiv.org/abs/2608.18263v2",
+   "2026-08-18",
+   "SIGMA: Symmetry-aware, Intelligent, Geometric, Multi-faced Adaptive Traffic Control for Reliable Intelligent Transportation Systems"
+  ],
+  [
+   "http://arxiv.org/abs/2605.08516v1",
+   "2026-05-08",
+   "OracleTSC: Oracle-Informed Reward Hurdle and Uncertainty Regularization for Traffic Signal Control"
+  ],
+  [
+   "http://arxiv.org/abs/2604.25259v1",
+   "2026-04-28",
+   "DGLight: DQN-Guided GRPO Fine-Tuning of Large Language Models for Traffic Signal Control"
+  ],
+  [
+   "http://arxiv.org/abs/2604.23902v1",
+   "2026-04-26",
+   "LLM-Augmented Traffic Signal Control with LSTM-Based Traffic State Prediction and Safety-Constrained Decision Support"
+  ],
+  [
+   "http://arxiv.org/abs/2604.05663v2",
+   "2026-04-07",
+   "CuraLight: Debate-Guided Data Curation for LLM-Centered Traffic Signal Control"
+  ],
+  [
+   "http://arxiv.org/abs/2604.05535v1",
+   "2026-04-07",
+   "SignalClaw: LLM-Guided Evolutionary Synthesis of Interpretable Traffic Signal Control Skills"
+  ],
+  [
+   "http://arxiv.org/abs/2603.24361v1",
+   "2026-03-25",
+   "LATS: Large Language Model Assisted Teacher-Student Framework for Multi-Agent Reinforcement Learning in Traffic Signal Control"
+  ],
+  [
+   "http://arxiv.org/abs/2601.15816v1",
+   "2026-01-22",
+   "Virtual Traffic Police: Large Language Model-Augmented Traffic Signal Control for Unforeseen Incidents"
+  ],
+  [
+   "http://arxiv.org/abs/2511.23122v1",
+   "2025-11-28",
+   "Evolutionary Discovery of Heuristic Policies for Traffic Signal Control"
+  ],
+  [
+   "http://arxiv.org/abs/2511.19253v2",
+   "2025-11-24",
+   "MAESTRO: Multi-Agent Environment Shaping through Task and Reward Optimization"
+  ],
+  [
+   "http://arxiv.org/abs/2511.00136v1",
+   "2025-10-31",
+   "A Dual Large Language Models Architecture with Herald Guided Prompts for Parallel Fine Grained Traffic Signal Control"
+  ],
+  [
+   "http://arxiv.org/abs/2510.26242v1",
+   "2025-10-30",
+   "Retrieval Augmented Generation-Enhanced Distributed LLM Agents for Generalizable Traffic Signal Control with Emergency Vehicles"
+  ],
+  [
+   "http://arxiv.org/abs/2509.03335v3",
+   "2025-09-03",
+   "EvolveSignal: A Large Language Model Powered Coding Agent for Discovering Traffic Signal Control Strategies"
+  ],
+  [
+   "http://arxiv.org/abs/2508.20818v1",
+   "2025-08-28",
+   "cMALC-D: Contextual Multi-Agent LLM-Guided Curriculum Learning with Diversity-Based Context Blending"
+  ],
+  [
+   "http://arxiv.org/abs/2507.05283v1",
+   "2025-07-04",
+   "Chat2SPaT: A Large Language Model Based Tool for Automating Traffic Signal Control Plan Management"
+  ],
+  [
+   "http://arxiv.org/abs/2506.12453v1",
+   "2025-06-14",
+   "Topology-Assisted Spatio-Temporal Pattern Disentangling for Scalable MARL in Large-scale Autonomous Traffic Control"
+  ],
+  [
+   "http://arxiv.org/abs/2505.19486v2",
+   "2025-05-26",
+   "VLMLight: Safety-Critical Traffic Signal Control via Vision-Language Meta-Control and Dual-Branch Reasoning Architecture"
+  ],
+  [
+   "http://arxiv.org/abs/2503.11739v1",
+   "2025-03-14",
+   "CoLLMLight: Cooperative Large Language Model Agents for Network-Wide Traffic Signal Control"
+  ],
+  [
+   "http://arxiv.org/abs/2407.06025v1",
+   "2024-07-08",
+   "iLLM-TSC: Integration reinforcement learning and large language model for traffic signal control policy improvement"
+  ],
+  [
+   "http://arxiv.org/abs/2406.13693v1",
+   "2024-06-19",
+   "From Single Agent to Multi-Agent: Improving Traffic Signal Control"
+  ],
+  [
+   "http://arxiv.org/abs/2403.08337v2",
+   "2024-03-13",
+   "LLM-Assisted Light: Leveraging Large Language Model Capabilities for Human-Mimetic Traffic Signal Control in Complex Urban Environments"
+  ],
+  [
+   "http://arxiv.org/abs/2401.00211v2",
+   "2023-12-30",
+   "Open-TI: Open Traffic Intelligence with Augmented Language Model"
+  ],
+  [
+   "http://arxiv.org/abs/2312.16044v5",
+   "2023-12-26",
+   "LLMLight: Large Language Models as Traffic Signal Control Agents"
+  ],
+  [
+   "http://arxiv.org/abs/2308.14284v6",
+   "2023-08-28",
+   "Prompt to Transfer: Sim-to-Real Transfer for Traffic Signal Control with Prompt Learning"
+  ]
+ ],
+ "tsc_llm_agent": [
+  [
+   "TOTAL",
+   "5"
+  ],
+  [
+   "http://arxiv.org/abs/2604.17456v2",
+   "2026-04-19",
+   "TrafficClaw: A Generalizable LLM Agent in the Unified Physical Environment for Urban Traffic Control"
+  ],
+  [
+   "http://arxiv.org/abs/2511.00136v1",
+   "2025-10-31",
+   "A Dual Large Language Models Architecture with Herald Guided Prompts for Parallel Fine Grained Traffic Signal Control"
+  ],
+  [
+   "http://arxiv.org/abs/2510.26242v1",
+   "2025-10-30",
+   "Retrieval Augmented Generation-Enhanced Distributed LLM Agents for Generalizable Traffic Signal Control with Emergency Vehicles"
+  ],
+  [
+   "http://arxiv.org/abs/2505.19486v2",
+   "2025-05-26",
+   "VLMLight: Safety-Critical Traffic Signal Control via Vision-Language Meta-Control and Dual-Branch Reasoning Architecture"
+  ],
+  [
+   "http://arxiv.org/abs/2503.11739v1",
+   "2025-03-14",
+   "CoLLMLight: Cooperative Large Language Model Agents for Network-Wide Traffic Signal Control"
+  ]
+ ],
+ "tsc_agent": [
+  [
+   "TOTAL",
+   "5"
+  ],
+  [
+   "http://arxiv.org/abs/2603.24361v1",
+   "2026-03-25",
+   "LATS: Large Language Model Assisted Teacher-Student Framework for Multi-Agent Reinforcement Learning in Traffic Signal Control"
+  ],
+  [
+   "http://arxiv.org/abs/2511.19253v2",
+   "2025-11-24",
+   "MAESTRO: Multi-Agent Environment Shaping through Task and Reward Optimization"
+  ],
+  [
+   "http://arxiv.org/abs/2508.20818v1",
+   "2025-08-28",
+   "cMALC-D: Contextual Multi-Agent LLM-Guided Curriculum Learning with Diversity-Based Context Blending"
+  ],
+  [
+   "http://arxiv.org/abs/2506.12453v1",
+   "2025-06-14",
+   "Topology-Assisted Spatio-Temporal Pattern Disentangling for Scalable MARL in Large-scale Autonomous Traffic Control"
+  ],
+  [
+   "http://arxiv.org/abs/2406.13693v1",
+   "2024-06-19",
+   "From Single Agent to Multi-Agent: Improving Traffic Signal Control"
+  ]
+ ],
+ "gridlock": [
+  [
+   "TOTAL",
+   "2"
+  ],
+  [
+   "http://arxiv.org/abs/2606.27381v1",
+   "2026-05-24",
+   "OverFlowLight: Real-Time Gridlock Prevention and Traffic Signal Optimization for Urban Intersections"
+  ],
+  [
+   "http://arxiv.org/abs/2508.09678v1",
+   "2025-08-13",
+   "Metering traffic flows for perimeter control through auction-based signalling using connected vehicles"
+  ]
+ ],
+ "maxpressure": [
+  [
+   "TOTAL",
+   "18"
+  ],
+  [
+   "http://arxiv.org/abs/2610.32290v1",
+   "2026-10-23",
+   "Regret-Based Max-Pressure Traffic Signal Control under Uncertain Traffic States"
+  ],
+  [
+   "http://arxiv.org/abs/2610.32280v1",
+   "2026-10-23",
+   "Decision Timescales in Max-Pressure Traffic Signal Control: Theory, Methodology, and Validation"
+  ],
+  [
+   "http://arxiv.org/abs/2610.31037v1",
+   "2026-10-22",
+   "Stability-Preserving Reinforcement Learning for Heterogeneity-Aware Composite Max-Pressure Traffic Signal Control"
+  ],
+  [
+   "http://arxiv.org/abs/2610.21883v1",
+   "2026-10-15",
+   "Hybrid Quantum-Classical Optimization for Emergency-Priority Traffic Signal Control"
+  ],
+  [
+   "http://arxiv.org/abs/2608.21734v2",
+   "2026-08-22",
+   "LMP-GNN: Probabilistic Reconstruction of Missing Lane Counts for Signed Max-Pressure Traffic Signal Control"
+  ],
+  [
+   "http://arxiv.org/abs/2607.22691v1",
+   "2026-07-17",
+   "HiLLTS: Zero-Shot Hierarchical LLM-Guided Traffic Signal Control for Sustainable Transportation"
+  ],
+  [
+   "http://arxiv.org/abs/2605.29693v2",
+   "2026-05-28",
+   "Momentum Based Reward Design for Low Emission Traffic Signal Control"
+  ],
+  [
+   "http://arxiv.org/abs/2601.06275v1",
+   "2026-01-09",
+   "FairSCOSCA: Fairness At Arterial Signals -- Just Around The Corner"
+  ],
+  [
+   "http://arxiv.org/abs/2511.00309v1",
+   "2025-10-31",
+   "Transit-MP: Transit-Prioritized Max-Pressure Control in Sparse Connected Vehicle Environments"
+  ],
+  [
+   "http://arxiv.org/abs/2505.05258v1",
+   "2025-05-08",
+   "CV-MP: Max-Pressure Control in Heterogeneously Distributed and Partially Connected Vehicle Environments"
+  ],
+  [
+   "http://arxiv.org/abs/2407.01421v1",
+   "2024-07-01",
+   "C-MP: A decentralized adaptive-coordinated traffic signal control using the Max Pressure framework"
+  ],
+  [
+   "http://arxiv.org/abs/2406.19305v1",
+   "2024-06-27",
+   "A Max Pressure Algorithm for Traffic Signals Considering Pedestrian Queues"
+  ],
+  [
+   "http://arxiv.org/abs/2406.19269v2",
+   "2024-06-27",
+   "OCC-MP: A Max-Pressure framework to prioritize transit and high occupancy vehicles"
+  ],
+  [
+   "http://arxiv.org/abs/2112.10107v3",
+   "2021-12-19",
+   "Expression might be enough: representing pressure and demand for reinforcement learning based traffic signal control"
+  ],
+  [
+   "http://arxiv.org/abs/2112.02336v1",
+   "2021-12-04",
+   "Efficient Pressure: Improving efficiency for signalized intersections"
+  ],
+  [
+   "http://arxiv.org/abs/2007.03433v2",
+   "2020-07-02",
+   "Decentralized Deep Reinforcement Learning for Network Level Traffic Signal Control"
+  ],
+  [
+   "http://arxiv.org/abs/1909.00395v1",
+   "2019-09-01",
+   "An Open-Source Framework for Adaptive Traffic Signal Control"
+  ],
+  [
+   "http://arxiv.org/abs/1701.03991v2",
+   "2017-01-15",
+   "Throughput-Optimal Scheduling for Multi-Hop Networked Transportation Systems With Switch-Over Delay"
+  ]
+ ],
+ "orchestrator_tsc": [
+  [
+   "TOTAL",
+   "23"
+  ],
+  [
+   "http://arxiv.org/abs/2610.22702v1",
+   "2026-10-15",
+   "ACE: An AI-Orchestrated Intrusion Detection and Compliance Mapping Engine"
+  ],
+  [
+   "http://arxiv.org/abs/2608.20129v2",
+   "2026-08-20",
+   "Multi-Agent Orchestration with the Common-Sense Reasoning Capabilities of LLMs for Autonomous Driving"
+  ],
+  [
+   "http://arxiv.org/abs/2608.19557v1",
+   "2026-08-20",
+   "When Do LLM Agents Help? Deadline-Aware Mixed-Criticality Task Scheduling at the Autonomous-Vehicle Edge"
+  ],
+  [
+   "http://arxiv.org/abs/2605.27685v1",
+   "2026-05-26",
+   "Decoupled Intelligence: A Multi-Agent LLM Framework for Controllable Traffic Scenario Generation in SUMO"
+  ],
+  [
+   "http://arxiv.org/abs/2605.11442v2",
+   "2026-05-12",
+   "Mobius Injection: From One-Shot Prompt Injection to Sustained Resource Exhaustion in AI Agent Infrastructure"
+  ],
+  [
+   "http://arxiv.org/abs/2608.11207v1",
+   "2026-04-25",
+   "Dynamic Governance of Multi-LLM Agent Systems for Collaborative Conversational Outcomes"
+  ],
+  [
+   "http://arxiv.org/abs/2604.06882v1",
+   "2026-04-08",
+   "Telecom World Models: Unifying Digital Twins, Foundation Models, and Predictive Planning for 6G"
+  ],
+  [
+   "http://arxiv.org/abs/2604.00317v1",
+   "2026-03-31",
+   "From Skew to Symmetry: Node-Interconnect Multi-Path Balancing with Execution-time Planning for Modern GPU Clusters"
+  ],
+  [
+   "http://arxiv.org/abs/2603.16411v1",
+   "2026-03-17",
+   "RECOVER: Robust Entity Correction via agentic Orchestration of hypothesis Variants for Evidence-based Recovery"
+  ],
+  [
+   "http://arxiv.org/abs/2603.14147v2",
+   "2026-03-14",
+   "An Alternative Trajectory for Generative AI"
+  ],
+  [
+   "http://arxiv.org/abs/2602.20144v2",
+   "2026-02-23",
+   "Agentic AI for Scalable and Robust Optical Systems Control"
+  ],
+  [
+   "http://arxiv.org/abs/2602.13307v2",
+   "2026-02-10",
+   "Cooperative Edge Caching with Large Language Model in Wireless Networks"
+  ],
+  [
+   "http://arxiv.org/abs/2602.13290v1",
+   "2026-02-08",
+   "AGORA: Agentic Green Orchestration Architecture for Beyond 5G Networks"
+  ],
+  [
+   "http://arxiv.org/abs/2602.05629v1",
+   "2026-02-05",
+   "ROMAN: Reward-Orchestrated Multi-Head Attention Network for Autonomous Driving System Testing"
+  ],
+  [
+   "http://arxiv.org/abs/2601.01209v2",
+   "2026-01-03",
+   "OrchestrRL: Dynamic Compute and Network Orchestration for Disaggregated RL"
+  ],
+  [
+   "http://arxiv.org/abs/2601.19908v1",
+   "2025-12-12",
+   "CHIME: Chiplet-based Heterogeneous Near-Memory Acceleration for Edge Multimodal LLM Inference"
+  ],
+  [
+   "http://arxiv.org/abs/2512.08476v1",
+   "2025-12-09",
+   "A Multi-Agent LLM Framework for Design Space Exploration in Autonomous Driving Systems"
+  ],
+  [
+   "http://arxiv.org/abs/2510.07176v1",
+   "2025-10-08",
+   "Exposing LLM User Privacy via Traffic Fingerprint Analysis: A Study of Privacy Risks in LLM Agent Interactions"
+  ],
+  [
+   "http://arxiv.org/abs/2509.02124v2",
+   "2025-09-02",
+   "FlexNGIA 2.0: Redesigning the Internet with Agentic AI -- Protocols, Services, and Traffic Engineering Designed, Deployed, and Managed by AI"
+  ],
+  [
+   "http://arxiv.org/abs/2508.20643v2",
+   "2025-08-28",
+   "CyberSleuth: Autonomous Blue-Team LLM Agent for Web Attack Forensics"
+  ],
+  [
+   "http://arxiv.org/abs/2505.18846v2",
+   "2025-05-24",
+   "LLM-Driven APT Detection for 6G Wireless Networks: A Systematic Review and Taxonomy"
+  ],
+  [
+   "http://arxiv.org/abs/2505.01841v1",
+   "2025-05-03",
+   "Harnessing the Power of LLMs, Informers and Decision Transformers for Intent-driven RAN Management in 6G"
+  ],
+  [
+   "http://arxiv.org/abs/2502.03885v6",
+   "2025-02-06",
+   "InfiniteHBD: Building Datacenter-Scale High-Bandwidth Domain for LLM with Optical Circuit Switching Transceivers"
+  ]
+ ]
+}

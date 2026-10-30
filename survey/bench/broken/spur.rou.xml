@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic demand for the 9-spur grid: one flow per spur, turning at the first TLS.
+     Spurs A0->A1 .. D0->A0 etc. Routes are single-turn so they exist in any spur net. -->
+<routes>
+  <vType id="car" length="5" minGap="2.5" accel="2.6" decel="4.5" maxSpeed="13.89" carFollowModel="Krauss"/>
+  <flow id="w1" type="car" begin="0" end="3600" vehsPerHour="600" departLane="random" departSpeed="max">
+    <route edges="A0A1 A1B1"/>
+  </flow>
+  <flow id="e1" type="car" begin="0" end="3600" vehsPerHour="600" departLane="random" departSpeed="max">
+    <route edges="C1B1 B1B2"/>
+  </flow>
+  <flow id="n1" type="car" begin="0" end="3600" vehsPerHour="600" departLane="random" departSpeed="max">
+    <route edges="B2B1 B1A1"/>
+  </flow>
+  <flow id="s1" type="car" begin="0" end="3600" vehsPerHour="600" departLane="random" departSpeed="max">
+    <route edges="B0B1 B1C1"/>
+  </flow>
+  <flow id="w2" type="car" begin="0" end="3600" vehsPerHour="500" departLane="random" departSpeed="max">
+    <route edges="A1A2 A2B2"/>
+  </flow>
+  <flow id="e2" type="car" begin="0" end="3600" vehsPerHour="500" departLane="random" departSpeed="max">
+    <route edges="C2B2 B2B1"/>
+  </flow>
+  <flow id="n2" type="car" begin="0" end="3600" vehsPerHour="500" departLane="random" departSpeed="max">
+    <route edges="B1B0 B0A0"/>
+  </flow>
+  <flow id="s2" type="car" begin="0" end="3600" vehsPerHour="500" departLane="random" departSpeed="max">
+    <route edges="B1B2 B2C2"/>
+  </flow>
+</routes>

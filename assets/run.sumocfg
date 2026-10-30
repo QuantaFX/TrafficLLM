@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <input>
+        <net-file value="taft.net.xml"/>
+        <route-files value="demand.rou.xml"/>
+    </input>
+    <time><begin value="0"/><end value="3600"/><step-length value="1"/></time>
+    <processing>
+        <time-to-teleport value="-1"/>
+        
+        <collision.action value="none"/>
+    </processing>
+    <report><no-step-log value="true"/><duration-log.statistics value="true"/></report>
+</configuration>

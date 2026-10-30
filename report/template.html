@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>TrafficLLM — Research Report</title>
+<style>
+@page { size: A4; margin: 20mm 18mm 18mm 18mm; }
+@page :first { margin: 0; }
+:root{ --ink:#16181d; --mute:#6a7280; --rule:#d7dbe2; --wash:#f5f6f8; --accent:#1b4f8a; }
+*{box-sizing:border-box}
+html{ font-size:10pt; }
+body{ font-family:"Charter","Bitter","Cambria",Georgia,serif; color:var(--ink);
+      line-height:1.5; margin:0; }
+body{ --page-width:180mm; --page-height:259mm; }
+.page{ position:relative; width:var(--page-width); min-height:var(--page-height);
+       padding-bottom:7mm; box-sizing:border-box; display:flex; flex-direction:column;
+       break-after:page; }
+.page>*{ flex:0 0 auto; }
+.page>.folio{ margin-top:auto; }
+.folio{ position:static; display:flex; justify-content:space-between; font-size:8pt;
+        color:var(--mute); padding-top:3mm; border-top:.4pt solid var(--rule); }
+.page:last-child{ break-after:auto; }
+h1,h2,h3,h4{ font-family:"Inter","Segoe UI",system-ui,sans-serif; line-height:1.22;
+             break-after:avoid; margin:1.5em 0 .45em; }
+h1{ break-before:page; }
+section.part>h1:first-child{ break-before:auto }
+h1{ font-size:17pt; letter-spacing:-.01em; border-bottom:2.5pt solid var(--accent);
+    padding-bottom:.3em; }
+h2{ font-size:13pt; color:var(--accent); margin-top:1.9em; }
+h3{ font-size:11pt; } h4{ font-size:10pt; color:var(--mute); text-transform:uppercase; letter-spacing:.06em; }
+p{margin:0 0 .7em; text-align:justify; hyphens:auto;}
+ul,ol{margin:0 0 .8em 1.2em; padding:0} li{margin:.22em 0}
+code{ font-family:"IBM Plex Mono","Consolas",monospace; font-size:.88em; background:var(--wash);
+      padding:.08em .28em; border-radius:2px; }
+pre{ background:#f7f8fa; border-left:2.5pt solid var(--rule); padding:.6em .8em; font-size:8.2pt;
+     overflow-wrap:anywhere; white-space:pre-wrap; break-inside:avoid; margin:.7em 0 1em;}
+pre code{background:none;padding:0;font-size:1em}
+table{ border-collapse:collapse; width:100%; font-size:8.4pt; margin:.8em 0 1.1em;
+       break-inside:avoid; font-family:"Inter","Segoe UI",sans-serif;}
+th,td{ border:.5pt solid var(--rule); padding:.28em .4em; vertical-align:top; text-align:left;}
+th{ background:var(--wash); font-weight:600 }
+blockquote{margin:.8em 0; padding:.2em 0 .2em 1em; border-left:2pt solid var(--accent); color:#333;}
+a{ color:var(--accent); text-decoration:none }
+section.part>h1:first-child{ break-before:auto }
+/* cover */
+.cover{ height:297mm; padding:38mm 22mm 22mm; display:flex; flex-direction:column; }
+.cover .kicker{ font:600 9pt/1 "Inter","Segoe UI",sans-serif; letter-spacing:.22em;
+                text-transform:uppercase; color:var(--accent) }
+.cover h1{ border:0; font-size:33pt; letter-spacing:-.025em; margin:.5em 0 .3em; break-before:auto }
+.cover .sub{ font-size:14pt; color:#333; max-width:120mm; line-height:1.35 }
+.cover .meta{ margin-top:auto; font:9pt/1.7 "Inter","Segoe UI",sans-serif; color:var(--mute);
+              border-top:.5pt solid var(--rule); padding-top:.8em }
+.cover .meta b{ color:var(--ink) }
+/* folio */
+.folio{ position:fixed; bottom:-11mm; left:0; right:0; font:8pt/1 "Inter","Segoe UI",sans-serif;
+        color:var(--mute); display:flex; justify-content:space-between }
+/* cite */
+sup.cite{ font-size:.68em; font-family:"Inter",sans-serif; line-height:0 }
+sup.cite a{ color:var(--accent); font-weight:600 }
+/* toc */
+.toc{ break-before:page }
+.toc ol{ list-style:none; margin:0; }
+.toc li{ display:flex; gap:.5em; font:9.5pt/1.5 "Inter","Segoe UI",sans-serif; }
+.toc li.s2{ margin-left:1.1em; font-size:9pt }
+.toc li.s3{ margin-left:2.4em; font-size:8.6pt; color:var(--mute) }
+.toc .t{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.toc .dots{ flex:1; border-bottom:1pt dotted var(--rule); margin-bottom:.32em }
+.toc .pg{ color:var(--mute) }
+/* references */
+p.ref{ font-size:8.8pt; text-align:left; padding-left:1.6em; text-indent:-1.6em; margin:0 0 .45em }
+p.ref .num{ color:var(--accent); font-weight:700; font-family:"Inter",sans-serif; margin-right:.35em }
+</style></head>
+<body>
+<div class="folio"><span>TrafficLLM — research report</span><span class="pn"></span></div>
+
+<div class="cover">
+  <div class="kicker">Research report</div>
+  <h1>LLM agents that talk to each<br>other about traffic</h1>
+  <p class="sub">Prior art, control-loop engineering and a measured simulator decision for a
+  traffic-signal simulation with per-intersection agents and a gridlock orchestrator.</p>
+  <div class="meta">
+    <b>Compiled</b> {{DATE}} &nbsp;·&nbsp; <b>Contents</b> three research dossiers,
+    a recommended arc, {{COUNT}} references<br>
+    Machine-checked on: arXiv API (2026-10-29), SUMO 1.28 + libsumo, GitHub API
+  </div>
+</div>
+
+<section class="toc"><h1 style="break-before:page">Contents</h1>
+<ol id="toc"></ol>
+</section>
+
+{{BODY}}
+
+
+<script>
+(() => {
+  // chunk body into fixed-height pages so htmlToPdf paginates exactly where we expect
+  const W = 180, H = 259;                       // mm
+  const pxmm = 96 / 25.4;
+  const cover = document.querySelector(".cover");
+  const tocSec = document.querySelector(".toc");
+  cover.className = "page cover";
+  tocSec.className = "page toc";
+  const holder = document.createElement("div");
+  [...document.body.childNodes].forEach(n => {
+    if (n === cover || n === tocSec) { document.body.removeChild(n); return; }
+    if (n.nodeType === 1 && (n.matches(".folio") || n.tagName === "SCRIPT")) return;
+    holder.appendChild(n);
+  });
+  holder.style.cssText = `width:${W}mm;column-width:${W}mm;column-gap:0;height:${H}mm;
+                          column-fill:auto;`;
+
+  const pageH = H * pxmm, pageW = W * pxmm;
+  const pages = [];
+  let cur = null;
+  const newPage = () => {
+    cur = document.createElement("div");
+    cur.className = "page";
+    document.body.appendChild(cur);
+    pages.push(cur);
+  };
+  pages.push(cover, tocSec); newPage();
+  const HOLDER = holder;
+  const fits = el => {
+    const before = cur.getBoundingClientRect().bottom;
+    const top = el.getBoundingClientRect().top;
+    return (top - before) + el.getBoundingClientRect().height < 2;
+  };
+  // walk leaf blocks in flow order
+  const blocks = [];
+  const walk = n => {
+    for (const c of [...n.children]) {
+      const big = c.querySelector && c.querySelector("pre,table");
+      if (c.matches("pre,table")) { blocks.push(c); continue; }
+      if (c.children.length && !big) { walk(c); }
+      else blocks.push(c);
+    }
+  };
+  walk(holder);
+
+  const placed = [];
+  for (const b of blocks) {
+    cur.appendChild(b);
+    if (b.getBoundingClientRect().bottom - cur.getBoundingClientRect().top > pageH - 4) {
+      // too tall for this page -> move to next
+      newPage();
+      cur.appendChild(b);
+    }
+  }
+
+
+  // outer margin + folio per page
+  for (const [i, pg] of pages.entries()) {
+    if (i > 0) {
+      const f = document.createElement("div");
+      f.className = "folio";
+      f.innerHTML = "<span>TrafficLLM — research report</span><span>" + (i + 1) + "</span>";
+      pg.appendChild(f);
+    }
+  }
+  window.__pages = pages.length; window.__dbg = {pages: pages.length, blocks: blocks.length};
+  window.__ready = true;
+})();
+</script>
+<script>
+(() => {
+  const TOK = "@@";
+  for (const a of document.querySelectorAll("sup.cite a")) {
+    if (a.dataset.cite) a.textContent = TOK + a.dataset.cite + TOK;
+  }
+  const spans = [];
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const victims = [];
+  while (walker.nextNode()) {
+    const n = walker.currentNode;
+    if (n.nodeValue.includes(TOK)) victims.push(n);
+  }
+  for (const n of victims) {
+    const cite = n.parentNode.dataset ? n.parentNode.dataset.cite : null;
+    if (!cite) continue;
+    const frag = document.createDocumentFragment();
+    n.nodeValue.split(TOK).forEach((part, i) => {
+      if (i) { const m = document.createElement("span");
+               m.className = "ctok"; m.dataset.cite = cite;
+               frag.appendChild(m); spans.push(m); }
+      frag.appendChild(document.createTextNode(part));
+    });
+    n.parentNode.replaceChild(frag, n);
+  }
+
+  // print layout: browser scroll px -> physical page (calibrated on this document)
+  const PAGE = 1017.5, OFFSET = 1.46, TOTAL = 25;
+  const phys = el => Math.round((el.getBoundingClientRect().top + scrollY) / PAGE + OFFSET);
+
+  const toc = document.getElementById("toc");
+  const frag = document.createDocumentFragment();
+  let n = 0;
+  for (const h of document.querySelectorAll("section.part > h1")) {
+    n++;
+    h.id = "bd-" + n;
+    const li = document.createElement("li");
+    li.className = "s1";
+    const a = document.createElement("a");
+    a.href = "#bd-" + n;
+    const tEl = document.createElement("span"); tEl.className = "t";
+    tEl.textContent = h.textContent.trim();
+    const d = document.createElement("span"); d.className = "dots";
+    const pg = document.createElement("span"); pg.className = "pg";
+    pg.textContent = phys(h);
+    a.append(tEl, d, pg); li.appendChild(a); frag.appendChild(li);
+    const lead = h.parentElement.querySelector("h2");
+    if (lead) {
+      const li2 = document.createElement("li");
+      li2.className = "s2";
+      const a2 = document.createElement("a");
+      a2.href = "#bd-" + n + "-l";
+      const t2 = document.createElement("span"); t2.className = "t";
+      t2.textContent = lead.textContent.trim();
+      const d2 = document.createElement("span"); d2.className = "dots";
+      const p2 = document.createElement("span"); p2.className = "pg";
+      p2.textContent = phys(lead);
+      a2.append(t2, d2, p2); li2.appendChild(a2); frag.appendChild(li2);
+      lead.id = "bd-" + n + "-l";
+    }
+  }
+  toc.replaceChildren(frag);
+
+  // folio: every page except the cover gets its number
+  const marks = [];
+  for (let p = 1; p <= TOTAL; p++) {
+    const el = document.createElement("span");
+    el.slot = String(p);
+    marks.push({ el, page: p + 1 });
+  }
+  const body = document.body;
+  for (const m of marks) { cell.appendChild(m.el); m.el.textContent = m.page; }
+  document.title = "TrafficLLM report";
+})();
+</script>
+</body></html>

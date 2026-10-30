@@ -1,0 +1,4 @@
+{"label": "healthy", "mode": "traci", "steps": 900, "sim_end_reached": 900.0, "vehicles_still_running": 253, "mean_time_loss_s": 79.9, "max_time_loss_s": 280.2, "steps_per_sec_best": 2274.4, "ns_per_step_best": 439681.3}
+{"label": "healthy", "mode": "libsumo", "steps": 900, "sim_end_reached": 900.0, "vehicles_still_running": 251, "mean_time_loss_s": 79.1, "max_time_loss_s": 283.0, "steps_per_sec_best": 5842.4, "ns_per_step_best": 171162.7}
+{"label": "gridlock", "mode": "traci", "steps": 1800, "sim_end_reached": 1800.0, "vehicles_still_running": 5266, "mean_time_loss_s": 73.5, "max_time_loss_s": 282.6, "steps_per_sec_best": 1513.2, "ns_per_step_best": 660852.7}
+{"label": "gridlock", "mode": "libsumo", "steps": 1800, "sim_end_reached": 1800.0, "vehicles_still_running": 5264, "mean_time_loss_s": 74.5, "max_time_loss_s": 281.9, "steps_per_sec_best": 2078.5, "ns_per_step_best": 481119.3}

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Pressure probe for sumo-rl 3x3Grid2lanes net.
+     Every corner arm pushes hard into its junction along a fixed corridor,
+     so queues meet in the middle and spill back. Run with
+     time to teleport -1 so a deadlock persists instead of being auto-cleared. -->
+<routes>
+  <vType id="car" length="5" minGap="2" accel="2.6" decel="4.5" maxSpeed="13.89"/>
+
+  <!-- west->east across rows -->
+  <flow id="we0" type="car" begin="0" end="3600" vehsPerHour="700" departLane="free" departSpeed="max"><route edges="0Wi 1Wi"/></flow>
+  <flow id="wi0" type="car" begin="0" end="3600" vehsPerHour="700" departLane="free" departSpeed="max"><route edges="0Ei 1Ei"/></flow>
+  <!-- north->south down columns -->
+  <flow id="ns0" type="car" begin="0" end="3600" vehsPerHour="900" departLane="free" departSpeed="max"><route edges="0Ni 1Ni"/></flow>
+  <flow id="sn0" type="car" begin="0" end="3600" vehsPerHour="900" departLane="free" departSpeed="max"><route edges="0Si 1Si"/></flow>
+
+  <flow id="we1" type="car" begin="0" end="3600" vehsPerHour="700" departLane="free" departSpeed="max"><route edges="1Wi 2Wi"/></flow>
+  <flow id="wi1" type="car" begin="0" end="3600" vehsPerHour="700" departLane="free" departSpeed="max"><route edges="1Ei 2Ei"/></flow>
+  <flow id="ns1" type="car" begin="0" end="3600" vehsPerHour="900" departLane="free" departSpeed="max"><route edges="1Ni 2Ni"/></flow>
+  <flow id="sn1" type="car" begin="0" end="3600" vehsPerHour="900" departLane="free" departSpeed="max"><route edges="1Si 2Si"/></flow>
+
+  <flow id="we2" type="car" begin="0" end="3600" vehsPerHour="700" departLane="free" departSpeed="max"><route edges="2Wi 2Ei"/></flow>
+  <flow id="ns2" type="car" begin="0" end="3600" vehsPerHour="900" departLane="free" departSpeed="max"><route edges="2Ni 2Si"/></flow>
+
+  <!-- cross-traffic into the same junctions from the opposite axis -->
+  <flow id="x0" type="car" begin="0" end="3600" vehsPerHour="700" departLane="free" departSpeed="max"><route edges="0Wi 0Ei"/></flow>
+  <flow id="x1" type="car" begin="0" end="3600" vehsPerHour="700" departLane="free" departSpeed="max"><route edges="1Wi 1Ei"/></flow>
+  <flow id="x2" type="car" begin="0" end="3600" vehsPerHour="700" departLane="free" departSpeed="max"><route edges="2Wi 2Ei"/></flow>
+  <flow id="y0" type="car" begin="0" end="3600" vehsPerHour="900" departLane="free" departSpeed="max"><route edges="0Ni 0Si"/></flow>
+  <flow id="y1" type="car" begin="0" end="3600" vehsPerHour="900" departLane="free" departSpeed="max"><route edges="1Ni 1Si"/></flow>
+  <flow id="y2" type="car" begin="0" end="3600" vehsPerHour="900" departLane="free" departSpeed="max"><route edges="2Ni 2Si"/></flow>
+</routes>

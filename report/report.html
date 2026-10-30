@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>TrafficLLM — Research Report</title>
+<style>
+@page { size: A4; margin: 20mm 18mm 18mm 18mm; }
+@page :first { margin: 0; }
+:root{ --ink:#16181d; --mute:#6a7280; --rule:#d7dbe2; --wash:#f5f6f8; --accent:#1b4f8a; }
+*{box-sizing:border-box}
+html{ font-size:10pt; }
+body{ font-family:"Charter","Bitter","Cambria",Georgia,serif; color:var(--ink);
+      line-height:1.5; margin:0; }
+body{ --page-width:180mm; --page-height:259mm; }
+.page{ position:relative; width:var(--page-width); min-height:var(--page-height);
+       padding-bottom:7mm; box-sizing:border-box; display:flex; flex-direction:column;
+       break-after:page; }
+.page>*{ flex:0 0 auto; }
+.page>.folio{ margin-top:auto; }
+.folio{ position:static; display:flex; justify-content:space-between; font-size:8pt;
+        color:var(--mute); padding-top:3mm; border-top:.4pt solid var(--rule); }
+.page:last-child{ break-after:auto; }
+h1,h2,h3,h4{ font-family:"Inter","Segoe UI",system-ui,sans-serif; line-height:1.22;
+             break-after:avoid; margin:1.5em 0 .45em; }
+h1{ break-before:page; }
+section.part>h1:first-child{ break-before:auto }
+h1{ font-size:17pt; letter-spacing:-.01em; border-bottom:2.5pt solid var(--accent);
+    padding-bottom:.3em; }
+h2{ font-size:13pt; color:var(--accent); margin-top:1.9em; }
+h3{ font-size:11pt; } h4{ font-size:10pt; color:var(--mute); text-transform:uppercase; letter-spacing:.06em; }
+p{margin:0 0 .7em; text-align:justify; hyphens:auto;}
+ul,ol{margin:0 0 .8em 1.2em; padding:0} li{margin:.22em 0}
+code{ font-family:"IBM Plex Mono","Consolas",monospace; font-size:.88em; background:var(--wash);
+      padding:.08em .28em; border-radius:2px; }
+pre{ background:#f7f8fa; border-left:2.5pt solid var(--rule); padding:.6em .8em; font-size:8.2pt;
+     overflow-wrap:anywhere; white-space:pre-wrap; break-inside:avoid; margin:.7em 0 1em;}
+pre code{background:none;padding:0;font-size:1em}
+table{ border-collapse:collapse; width:100%; font-size:8.4pt; margin:.8em 0 1.1em;
+       break-inside:avoid; font-family:"Inter","Segoe UI",sans-serif;}
+th,td{ border:.5pt solid var(--rule); padding:.28em .4em; vertical-align:top; text-align:left;}
+th{ background:var(--wash); font-weight:600 }
+blockquote{margin:.8em 0; padding:.2em 0 .2em 1em; border-left:2pt solid var(--accent); color:#333;}
+a{ color:var(--accent); text-decoration:none }
+section.part>h1:first-child{ break-before:auto }
+/* cover */
+.cover{ height:297mm; padding:38mm 22mm 22mm; display:flex; flex-direction:column; }
+.cover .kicker{ font:600 9pt/1 "Inter","Segoe UI",sans-serif; letter-spacing:.22em;
+                text-transform:uppercase; color:var(--accent) }
+.cover h1{ border:0; font-size:33pt; letter-spacing:-.025em; margin:.5em 0 .3em; break-before:auto }
+.cover .sub{ font-size:14pt; color:#333; max-width:120mm; line-height:1.35 }
+.cover .meta{ margin-top:auto; font:9pt/1.7 "Inter","Segoe UI",sans-serif; color:var(--mute);
+              border-top:.5pt solid var(--rule); padding-top:.8em }
+.cover .meta b{ color:var(--ink) }
+/* folio */
+.folio{ position:fixed; bottom:-11mm; left:0; right:0; font:8pt/1 "Inter","Segoe UI",sans-serif;
+        color:var(--mute); display:flex; justify-content:space-between }
+/* cite */
+sup.cite{ font-size:.68em; font-family:"Inter",sans-serif; line-height:0 }
+sup.cite a{ color:var(--accent); font-weight:600 }
+/* toc */
+.toc{ break-before:page }
+.toc ol{ list-style:none; margin:0; }
+.toc li{ display:flex; gap:.5em; font:9.5pt/1.5 "Inter","Segoe UI",sans-serif; }
+.toc li.s2{ margin-left:1.1em; font-size:9pt }
+.toc li.s3{ margin-left:2.4em; font-size:8.6pt; color:var(--mute) }
+.toc .t{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.toc .dots{ flex:1; border-bottom:1pt dotted var(--rule); margin-bottom:.32em }
+.toc .pg{ color:var(--mute) }
+/* references */
+p.ref{ font-size:8.8pt; text-align:left; padding-left:1.6em; text-indent:-1.6em; margin:0 0 .45em }
+p.ref .num{ color:var(--accent); font-weight:700; font-family:"Inter",sans-serif; margin-right:.35em }
+</style></head>
+<body>
+<div class="folio"><span>TrafficLLM — research report</span><span class="pn"></span></div>
+
+<div class="cover">
+  <div class="kicker">Research report</div>
+  <h1>LLM agents that talk to each<br>other about traffic</h1>
+  <p class="sub">Prior art, control-loop engineering and a measured simulator decision for a
+  traffic-signal simulation with per-intersection agents and a gridlock orchestrator.</p>
+  <div class="meta">
+    <b>Compiled</b> 2026-10-30 &nbsp;·&nbsp; <b>Contents</b> three research dossiers,
+    a recommended arc, 42 references<br>
+    Machine-checked on: arXiv API (2026-10-29), SUMO 1.28 + libsumo, GitHub API
+  </div>
+</div>
+
+<section class="toc"><h1 style="break-before:page">Contents</h1>
+<ol id="toc"></ol>
+</section>
+
+<section class="part" id="part-a"><h1 style="break-before:page">Part A — Prior art</h1><h2>What the field already does</h2></section><p><strong>Status: citation-grade survey.</strong> Resetting note: the task's <code>IDEA.md</code> was for the <em>adjacent</em> (road-arc) design. This dossier is written against the <strong>node-semantics</strong> design:</p>
+<ul>
+<li>Per node: Each signalised <strong>node</strong> carries the agent. Each node's agent only observes the <strong>arcs</strong> that touch it, i.e. the <strong>road arcs</strong> that either enter (upstream) or leave (downstream) the node.</li>
+<li>Each node's agent sees "Pressure" (pressure per node) as: <code>p(a) = max(0, up(a) − down(a))</code> on movement <code>a</code> (upstream queue minus downstream queue, floored at 0 against the conceptual pressure), maximised over movements in a candidate phase. Pressure is used to choose a phase and decide <strong>hold vs switch</strong>.</li>
+<li>Node agents <strong>communicate</strong> with neighbour node agents (the arcs that connect them).</li>
+<li>An <strong>Orchestrator LLM</strong> detects gridlock and <strong>overrides</strong> the subagents; it keeps control of the <strong>affected nodes</strong> until resolution, then <strong>hands control back</strong>.</li>
+</ul>
+<p>All arXiv counts below are machine-checked against the arXiv API on <strong>2026-10-29</strong> (queries in <code>research/_arxiv_raw.json</code>). Abstracts for all IDs below are pulled from the API and stored in <code>research/_abs.json</code>; full texts read live in <code>research/_pdf/</code> and <code>research/_fulltext/</code>.</p><h3>0. Landscape counts (measured, not guessed)</h3>
+<table>
+<thead>
+<tr>
+<th>Query (arXiv <code>all:</code>)</th>
+<th>Hits</th>
+<th>Reading</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>"traffic signal control" AND "large language model"</code></td>
+<td><strong>26</strong></td>
+<td>small but real; ~20 directly on-topic (the rest are RL/adjacent)</td>
+</tr>
+<tr>
+<td><code>"traffic signal" AND "LLM agent"</code></td>
+<td>5</td>
+<td>tight core</td>
+</tr>
+<tr>
+<td><code>"traffic signal control" AND "multi-agent" AND "large language model"</code></td>
+<td>7</td>
+<td>core</td>
+</tr>
+<tr>
+<td><code>"max pressure" AND "large language model"</code></td>
+<td><strong>0</strong></td>
+<td>nobody has bridged these two vocabularies</td>
+</tr>
+<tr>
+<td><code>"traffic signal" AND deadlock</code></td>
+<td><strong>2</strong></td>
+<td>gridlock is nearly absent from this literature; neither hit is an LLM paper</td>
+</tr>
+<tr>
+<td><code>"gridlock" AND "traffic signal"</code></td>
+<td><strong>2</strong> (both: OverFlowLight 2606.27381, auction metering 2508.09678)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>"traffic signal control" AND orchestrator</code></td>
+<td><strong>2</strong></td>
+<td>neither is the described architecture</td>
+</tr>
+</tbody>
+</table>
+<p>The absolute literature is small. That cuts both ways: there is room, but the <em>shape</em> of the design is heavily pre-figured — see §1.</p><h3>1. LLM / multi-agent-LLM TSC papers, newest first</h3>
+<p>Each entry: mechanism in 3–5 lines, <strong>LLM control</strong> (cadence / model / latency handling), and <strong>distance to the design</strong>.</p>
+<h4>1.1 Evocation of the Orchestrator pattern: scored</h4>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Paper</th>
+<th>Per-node agent?</th>
+<th>Agents talk?</th>
+<th>Supervisor preempts locals?</th>
+<th><strong>Verdict</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>HiLLTS (2607.22691)</td>
+<td><strong>No</strong> — lower layer is a <em>rule</em> controller</td>
+<td>No</td>
+<td>City LLM issues directives that "override the base policy"</td>
+<td><strong>~65% of the design.</strong> Missing: per-node LLM, node–node talk, gridlock-specific trigger, hand-back</td>
+</tr>
+<tr>
+<td>2</td>
+<td>CoLLMLight (2503.11739)</td>
+<td><strong>Yes</strong> (one agent per intersection)</td>
+<td>Only implicitly (neighbour occupancy baked into the prompt)</td>
+<td>No</td>
+<td>~50 %. Its own conclusion names a "regional-level planning" tier as future work</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Virtual Traffic Police (2601.15816)</td>
+<td>No — single intersection</td>
+<td>No</td>
+<td>Upper LLM <strong>is</strong> the preemption layer; tunes MP weights</td>
+<td>~45 %, but the <em>preempt-then-restore</em> framing is explicitly human-police</td>
+</tr>
+<tr>
+<td>4</td>
+<td>TrafficGen (Frontiers AI 2026)</td>
+<td>"IntersectionAgent(s)"</td>
+<td>Via a Supervisor <em>router</em></td>
+<td>Supervisor routes to emergency/intersection agents</td>
+<td>~55 % architecturally, but <strong>single-intersection text twin</strong>, deterministic, no gridlock</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Traffic-R1 (ACL 2026)</td>
+<td>Yes</td>
+<td><strong>Yes — explicit async message passing</strong></td>
+<td>No</td>
+<td>~45 %; the comms layer is the closest match, the supervisor is absent</td>
+</tr>
+<tr>
+<td>–</td>
+<td><em>Design under review</em></td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes, gridlock-triggered, with hand-back</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><em>(This table is the whole competitive picture: no published work closes all four columns.)</em></p>
+<p><em>(Scores are my own reading of the abstracts/full texts, not the authors' claims.)</em></p>
+<p><strong>Be brutal:</strong> the orchestrator pattern is <em>not</em> novel in the abstract — two-tier human/manager-override is the classic traffic-management structure, and three 2026 papers (HiLLTS, Virtual Traffic Police, TrafficGen) each ship a version of it. What nobody has is the <em>specific</em> conjunction: LLM per node <strong>and</strong> node-to-node a2a messages <strong>and</strong> a supervisor that keys on <strong>gridlock</strong> and <strong>hands control back</strong>. That conjunction is the only defensible claim, and §5 says how fragile it is.</p>
+<h4>1.2 Papers — newest first</h4>
+<p><strong>2609.22746 — ProcessLight: Process Supervision for LLM-Based TSC.</strong> EMNLP 2026.
+- Mechanism: decomposes each signal decision into verifiable <strong>semantic reasoning steps</strong>; trains with step-wise credit assignment (STeP-PO) over a step tree, scoring each step's quality and influence on the final action.
+- LLM control: one LLM call per phase decision; model is a fine-tuned backbone (not specified in abstract); no latency handling.
+- Distance: single-intersection, per-node agent, no comms, no supervisor. Competes on <em>reasoning quality</em>, so a shiny LLM-per-node pipeline must beat it on a metric that isn't only AWT.</p>
+<p><strong>2608.18263 — SIGMA.</strong> SUMO, multi-faced RL + LLM translating emergency instructions into priority vectors; four Kolkata intersections. Explores <strong>graceful degradation under LLM failure</strong> — useful to copy. No comms, no supervisor.</p>
+<p><strong>2604.25259 — DGLight (thesis).</strong> DQN (CoLight-style critic) scores LLM candidate actions; GRPO fine-tune; Jinan/Hangzhou. LLM call per decision; no latency handling. Pure single-intersection.</p>
+<p><strong>2604.23902 — LLM-Augmented TSC with LSTM prediction.</strong> LLM <strong>evaluates candidate actions</strong> from an LSTM predictive controller; a <strong>safety filter</strong> validates every output — "LLMs as constrained reasoning and decision-support rather than direct low-level controllers" is its stated thesis. SUMO; balanced/peak/surge demand.</p>
+<p><strong>2604.05663 — CuraLight.</strong> IJCNN 2026. RL agent collects trajectories → imitation fine-tune of an LLM; multi-LLM <strong>debate ensemble</strong> scores candidates for preference supervision. Training-time ensemble, inference-time single model.</p>
+<p><strong>2604.05535 — SignalClaw.</strong> Evolved, interpreter-checkable skill code; an event detector + priority dispatcher composes skills at runtime for EV/incident. Reported delay 7.8–9.2 s; EV delay 11.2–18.5 s vs 42–95 s for MP/DQN.</p>
+<p><strong>2604.17456 — TrafficClaw.</strong> Single LLM agent for multiple urban subsystems (signals, freeway, transit, taxi) with persistent memory and agentic RL. <strong>Not</strong> per-node — the agent is the controller.</p>
+<p><strong>2601.15816 — Virtual Traffic Police.</strong> NUS, Elsevier preprint. Upper LLM tunes <strong>max-pressure saturation weights</strong> and MPC capacity parameters in response to incidents; RAG over a "traffic language database" + LLM verifier that self-refines the retrieval store.
+- LLM control: invoked every <strong>Q</strong> steps (Q is a free parameter; the paper's algorithm gated on <code>s mod Q = 0</code>); DeepSeek-V3-671B, GPT-4o; temperature 1 for the generator, 0 for the verifier. <strong>No latency measurement at all.</strong>
+- Latency stance: argues LLM inference "may hinder real-time responsiveness" and that phase transitions "demand sub-second-level responsiveness" — so the LLM sits <strong>above</strong> a conventional controller that does the sub-second work.
+- Distance: single isolated intersection; MP is the lower layer; the orchestrator only tweaks parameters and never takes over phase selection. Its conclusion asks for "large-scale urban networks" — exactly your setting.</p>
+<p><strong>2511.19253 — MAESTRO.</strong> Moves the LLM <em>out</em> of the loop entirely: offline curriculum + reward-function generation for MADDPG. 16 Hangzhou intersections.</p>
+<p><strong>2511.00136 — HeraldLight.</strong> Dual LLM: Herald forecaster, LLM-Agent, LLM-Critic that repairs hallucinated actions. CityFlow, 224 intersections; "parallel fine-grained" per-intersection agents. No comms, no supervisor.</p>
+<p><strong>2510.26242 — REG-TSC.</strong> Reviewer-RAG + emergency-aware deep reasoning; distributed per-intersection agents, ~<strong>one LLM call per intersection per simulation step</strong>; Llama-3.1-8B with LoRA; SUMO, 17–177 heterogeneous intersections. Deep reasoning only activates for emergency nodes (a cheap complexity gate). No comms, no supervisor.</p>
+<p><strong>2508.02344 — Traffic-R1.</strong> ACL 2026 (aclanthology 2026.acl-long.995), HKUST-GZ + PCITECH. Qwen2.5-3B, two-stage RL. <strong>Explicit asynchronous message-passing network</strong> between neighbouring intersection agents (claims synchronized parallel workflows are either inefficient or incompatible). Deployed on a <strong>single T4-class (Tesla T40)</strong> for inference; 15 s green / 3 s amber / 2 s all-red in CityFlow; deployed on 55k drivers/day with ≥5 % queue reduction.
+- This is the closest thing to your agent-to-agent layer. The gap: comms carry <em>messages</em> but there is no supervisory tier, no gridlock trigger, no hand-back.</p>
+<p><strong>2503.11739 — CoLLMLight.</strong> HKUST-GZ. Per-intersection agents; a <strong>spatiotemporal graph of neighbouring intersections</strong> (incl. occupied neighbour lanes, occupancy &gt; α=0.5) rides in the prompt; complexity-aware reasoning picks no-coop/simple/complex modes by counting congested neighbour lanes (n_c). Fine-tuned on Llama-3.1-8B.
+- LLM control: <strong>one LLM call per intersection per decision step</strong>; decision step = 30 s green + 3 s amber + 2 s all-red in CityFlow. Total inference-time axis is a headline axis in the ablation (2.5k–10k s scale). No concurrency or staleness handling.
+- Should be the primary baseline and threat. Its related work explicitly dismisses "iterative inter-agent communication" as too slow for real time — the closest published argument to your a2a claim.</p>
+<p><strong>2407.06025 — iLLM-TSC.</strong> LLM <strong>audits</strong> RL actions and overrides implausible ones; −17.5 % AWT under degraded comms. The override pattern at single-intersection scale.</p>
+<p><strong>2406.13693 — From Single Agent to Multi-Agent.</strong> Small step-up study; fine-tuned LLM gains are "small".</p>
+<p><strong>2403.08337 — LLM-Assisted Light.</strong> LLM at the centre with perception/decision tools; −20.4 % AWT under sensor outage.</p>
+<p><strong>2312.16044 — LLMLight + LightGPT.</strong> The origin: prompt-as-state, LLM as controller, distilled LightGPT. 10 datasets, 15 human raters, claims beat 10 frontier LLMs. <strong>Read the prompt design</strong> — senior traffic engineers judge its outputs as the reference for explainability.</p>
+<p><strong>2401.00211 — Open-TI.</strong> Assistant-to-agent traffic. Operator loop: conversational LLM shells out to simulator training, with a separate agentChatAgent loop — plus some sort of training signal end-to-end.</p>
+<h4>1.3 Not LLM, but the right non-LLM coordination baselines</h4>
+<ul>
+<li><strong>MA2C</strong> (arXiv 1903.04527): localised MARL where each agent's state = own + neighbour fingerprint. The canonical "local agents, local observation" RL baseline.</li>
+<li><strong>FRAP</strong> (AAAI 2019) and <strong>CosLight</strong> (KDD 2024): phase-level interaction networks and <em>learned</em> collaborator selection — the strongest non-LLM evidence for the "agents should talk" premise.</li>
+<li><strong>UrbanLLM (2406.12360):</strong> general hierarchical manager → specialized expert agent pattern, high-level.</li>
+</ul><h3>2. Max-pressure theory</h3>
+<h4>2.1 Varaiya 2013 — the stability result</h4>
+<p>Varaiya, P. (2013). <em>Max pressure control of a network of signalized intersections</em>. <strong>Transportation Research Part C 36, 177–195</strong>. DOI <strong>10.1016/j.trc.2013.08.014</strong>.</p>
+<p>Model: store-and-forward point queues, infinite storage, <strong>fixed-known turn ratios</strong> r(l,m), saturation flows c(l,m). A phase is a single movement (l,m) from input link l to output link m. <strong>Definition (21) of the paper</strong>: the <em>weight</em> of a phase is</p>
+<pre><code>w(l,m)(X) = x(l,m) − Σ_{p∈Out(m)} r(m,p)·x(m,p)
+</code></pre>
+<p>i.e. the upstream queue on the phase minus the average downstream queue on m. The <strong>pressure</strong> of a control matrix S is the saturation flow times the phase weight:</p>
+<pre><code>c(S)(X) = Σ_{(l,m): S(l,m)=1} c(l,m)·w(l,m)(X)
+</code></pre>
+<p>and <strong>MP control is the arg-max over control matrices</strong> (eq. 22–23). The paper states (p. 186) verbatim: "The pressure of a signal control matrix S is the sum of the saturation flows multiplied by the weights of all the phases that S actuates simultaneously." <strong>Equivalently</strong> (Levin 2023): <code>w_ij = x_ij − Σ_k x_jk p̄_jk</code>, <code>s* ∈ argmax Σ w_ij Q_ij s_ij</code>.</p>
+<p><strong>Theorem 2:</strong> MP is stabilizing whenever the mean demand lies in the interior D° of the feasible demand region; likewise Theorem 4 for adaptive MP with converging parameter estimates; Theorem 5 for weighted queues.</p>
+<p><strong>Caveats Varaiya himself records:</strong></p>
+<ul>
+<li><strong>Requires the mean turn ratios and saturation flows.</strong> (Theorem 2 assumes known; "MP does require knowledge of turn ratios and saturation flows".) Practically this is a fixed turning-movement table — a bad fit for a node agent that only sees raw link counts unless you estimate on-line (→ AMP, Theorem 4, needs convergence).</li>
+<li><strong>The projected variant <code>u_sat</code></strong> (forbid movements into a saturated link) is <strong>not stable</strong> — gridlock of a different kind (Varaiya's Example 3: all movements blocked).</li>
+<li><strong>Min-green / weighted-queue variants exist (Thm 5)</strong> to prevent starvation; Lämmer–Treiber and the Transit-MP / mTransit-MP line (2511.00309) document starvation empirically from the CV-sensing side.</li>
+<li><strong>Saturation-flow misses ("the saturation rate of the lane drops to 0")</strong> are exactly what the LLM in Virtual Traffic Police rewrites by hand.</li>
+</ul>
+<h4>2.2 How close is the derivative literature?</h4>
+<ul>
+<li><strong>PressLight</strong> (Wei et al., KDD 2019, DOI 10.1145/3292500.3330949): reward = pressure, state = lane counts. Single-agent per intersection, no comms. Its abstract claims a theoretical ε-optimality argument but the implemented controller is a one-hop RL policy — the stability theorem does <strong>not</strong> carry over.</li>
+<li><strong>CoLight</strong> (Wei et al., CIKM 2019, DOI 10.1145/3357384.3357972): graph-attention over neighbours — city, queued neighbour embeddings; reward = queue, not a stability guarantee.</li>
+<li><strong>MPLight</strong> (Chen et al., AAAI 2020): pressure reward + FRAP-style attention; "all summed queue lengths ≤ some explicit constraint"; again heuristic.</li>
+<li><strong>Efficient-MP / 2112.02336</strong> and <strong>Advanced-MP / 2112.10107:</strong> restate exact pressure; the Advanced version adds running-vehicle count to the downstream side. If your "pressure" is summed with a <code>max(0, ·)</code> you are in Efficient/Projected territory.</li>
+<li><strong>C-MP (2407.01421):</strong> Weighted downstream platoon emphasis, provable queue stability; the closest "decentralised yet coordinated" MP (stability maintained via Lyapunov analysis).</li>
+<li><strong>Levin 2023 summary (J. Transp. Eng. A 149(4), 03123001):</strong> best single methodological reference, with the list of where MP theory's assumptions break under finite storage and work-conservation.</li>
+<li><strong>Decision timescale (2610.32280):</strong> proves a load-dependent critical decision interval — essential reading because the LLM's per-call cadence is a decision interval, and this gives you the theory for <em>why</em> the orchestrator can't run at every step.</li>
+</ul><h3>3. Gridlock / deadlock — the weakest-covered and most differentiating part of the design</h3>
+<h4>3.1 What actually causes gridlock</h4>
+<p>Gridlock is a <strong>cycle of blocked links</strong>: every arc in a cycle is occupied to capacity, so no node in the cycle can move vehicles, so no node in the cycle empties. In a mesoscopic queue model it needs three ingredients:</p>
+<ol>
+<li><strong>Finite storage</strong> (link capacity L(m)). Point-queue models without storage can never gridlock — this is exactly why the MP theorems are blind to it (Varaiya 2013, §4.5: "the model does not permit saturation … This is a limitation" and Fig. 6's conjecture that a network with a loop "can always be subject to gridlock no matter how large the links are").</li>
+<li><strong>A demand/route topology that closes loops</strong> — a one-way ring, a rotary, or a ramp/gore with a U-turn path.</li>
+<li><strong>A work-conserving green</strong> that keeps feeding a full downstream — this is <em>the node agent's own choice</em>. The MP <code>u_sat</code> variant fails for exactly this reason: a strict "skip movements into a saturated link" rule stalls the whole cycle.</li>
+</ol>
+<p>A point-queue subtlety worth citing verbatim in any write-up: Varaiya's Fig. 6 shows <strong>the identical junction on the left gridlocks, the identical one on the right doesn't</strong> — topology alone decides whether a given blocked-queue policy gridlocks.</p>
+<h4>3.2 The sparse gridlock-control literature</h4>
+<ul>
+<li><strong>OverFlowLight (2606.27381)</strong> is the only gridlock paper in the LLM-adjacent space. Detector/segment widgets flag queue overflow onto upstream segments, and the controller inserts a <strong>dedicated "overflow phase"</strong> to flush the blocking movement; a rule layer hard-masks unsafe actions before the RL/Q-network output (<code>a* = argmax_{a∈A_safe} Q</code>). Real deployment on 43 intersections, −60.4 % overflow events, +18.2 % throughput, 106 ms end-to-end. <strong>It is <em>intra</em>-intersection and rule-based — no LLM, no multi-intersection takeover, no hand-back.</strong></li>
+<li><strong>Lämmer, Treiber &amp; Rausch 2013</strong> — inflow-regulating green that never feeds more than a link can hold. The direct intellectual ancestor of the user's "Orchestrator restriction". Checkout-free self-healing variants include the <em>self-healing road networks</em> work of these authors. Adjacent: <strong>Tsitsokas &amp; Kouvelas 2022/23</strong> (MFD perimeter control + MP two-layer). <strong>Perimeter control</strong> (via MFD) and <strong>auction metering</strong> (2508.09678) are the macro cousins; neither is agent-based nor LLM.</li>
+<li><strong>Gate/metering with forbidden movements:</strong> the standard real-world remedy is forbidding the closing turns and holding the gate approach. All formulations below assume a phase <em>insert</em>. Neither is a per-node LLM.</li>
+<li><strong>Regional v. dynamic containment:</strong> none of the above does <strong>hand-back with a state guarantee</strong>. The closest is OverFlowLight's "remove the overflow phase when the queue clears".</li>
+</ul>
+<h4>3.3 Mechanism note — what the implementation must actually do</h4>
+<p>In a meso simulator, gridlock is <em>never detected</em> by a generic engine signal — the sim just freezes and demand piles up behind entry points, and average trip time rises while average speed → 0. So <em>any</em> implementation must add: (a) a per-arc full/spillback event, (b) a cycle-adjusted reachability check over the occupied-subgraph on the orchestrator restart, and (c) <strong>an escape hatch</strong> (or a "shrink the cordon by one ring and retry" loop) so one unresolvable movement pair can't leave you in a live-lock loop; (d) a route-follow rule so vehicles don't reverse at dead ends. Budget a day; nobody has published this for an LLM orchestrator and it is where the demo will break first.</p>
+<p><strong>Honesty note:</strong> arXiv "deadlock + traffic signal" = <strong>2</strong> hits, and neither is about gridlock avoidance. Gridlock in the LLM-TSC ecosystem is essentially unclaimed. That is the single strongest part of the design — and also the part where you must import outside citations (Varaiya §4.5, Lämmer/OverFlowLight) rather than pretend the LLM literature covers it.</p><h3>4. Benchmarks, metrics, and what a fair comparison requires</h3>
+<h4>4.1 Simulators</h4>
+<ul>
+<li><strong>SUMO</strong> (TraCI). The industry/standards default; every design-deployable study here uses it (Virtual Traffic Police, REG-TSC, all the ×Light family). Microsim + real OSM. Overhead is the <em>fairness</em> control for LLM: all baselines and LLM run in the same simulator with the same controls.</li>
+<li><strong>CityFlow</strong> (KDD 2019, DOI 10.1145/3357384.3358028). Frame-stepable, ~10 000 veh/s; no PyPI wheel — source build only (or the Docker image the docs push). Used by CoLLMLight, HeraldLight, Traffic-R1 and most LLM papers <em>because</em> it is an in-sim call loop.</li>
+<li><strong>RESCO</strong> (NeurIPS 2021 D&amp;B): SUMO + OpenAI-Gym; <strong>but note the paper's own headline result — "previous algorithms are not robust… when a distributed deep Q-learning approach is shown to outperform previously reported state-of-the-art".</strong> Benchmarks are <em>styled</em> (grid/CAM/tier/scenario).</li>
+<li><strong>LibSignal</strong> (arXiv 2211.10649; <em>Machine Learning</em> 113:5235–5271, 2024): cross-simulator equivalence across SUMO and CityFlow. <strong>This is the fairness control any cross-simulator claim requires</strong> — the authors' whole point is that models validated in one simulator are not referential to the other.</li>
+</ul>
+<h4>4.2 Metrics</h4>
+<p>Standard (all computable directly in either simulator):
+- <strong>AWT</strong> average waiting time · <strong>ATT</strong> average travel time · <strong>AQ</strong> average queue length · <strong>throughput</strong> (vehicles/h penetrated) · <strong>stops</strong>.
+- <strong>Fairness CDFs</strong> (p95 waiting time) rather than only means — HiLLTS does this and it is the cheapest way to expose starvation, which an orchestrator <em>will</em> cause at a cordon boundary.
+- <strong>Gridlock metrics</strong> (the design's own claim): overflow events, vehicles-done vs (vehicles-in + left-in-network) deficit, recover time from inject→clear, number of nodes retained in the cordon, and versus a no-orchestrator ablation <em>and</em> a rule-only orchestrator ablation.</p>
+<h4>4.3 What fairness requires</h4>
+<ol>
+<li><strong>Same sim, same phase spec</strong> (30 s green / 3 s amber / 2 s all-red is the Guangzhou/Hangzhou default in 2503.11739/2508.02344/2312.16044). Same vehicle counts and seed runtime.</li>
+<li><strong>Update step matched to control frequency</strong> — an LLM on a 1 s step in CityFlow has paid to re-decide 30× per green. Declare it; else you're comparing reasoning policy vs. actuation rate.</li>
+<li><strong>Competent contemporary baselines:</strong> CoLLMLight, Traffic-R1 (comms), Virtual Traffic Police (override), OverFlowLight (gridlock mechanism), plus <strong>Varaiya MP</strong> and a <em>rule-only two-tier</em> (fixed-time plan + rule overflow phases).</li>
+<li><strong>Oversaturation sweep sized from the description</strong>, to make gridlock reachable. the common Jinan/Hangzhou/CityFlow draws are light and rarely gridlock (Varaiya's Example 3 needs <em>all</em> links saturated; CoLLMLight's Jinan runs average ~30 veh/min per intersection); scale to v/c &gt; 0.9 on closing links; a gridlock paper with no gridlock in its demand has nothing to show.</li>
+<li><strong>Report realized LLM call rate and mean inter-call gap</strong> for every method.</li>
+<li><strong>5 seeds, report mean and CI.</strong> A good share of the LLM-TSC papers in §1 report single runs; the means are not reproducible across seeds and you must not inherit that.</li>
+</ol>
+<h4>4.4 The two concrete traps</h4>
+<ul>
+<li><strong>Node "pressure" with <code>max(0, ·)</code> is <em>efficient/projected</em> pressure</strong> (2112.02336, 2112.10107). It is exactly as computation-bound as MP and strictly better behaved than plain pressure when a queue runs short, <strong>but Varaiya's Theorem 2 does not cover it</strong> — you may not claim MP stability. Cite Efficient-MP, and call the quantity "projected pressure".</li>
+<li><strong>Any demand without storage exhaustion never exercises the orchestrator.</strong> <em>Every</em> draw must hit a full queue on a closing link at least once, or the demo becomes "LLM agents redo MP". Count and report gridlock/overflow events per run, alongside AWT.</li>
+</ul><h3>5. Novelty verdict</h3>
+<h4>Already solved (don't restart, cite and build on)</h4>
+<ul>
+<li><strong>Pressure is a solved cost function.</strong> Varaiya 2013 proves stability when turn ratios and sat-flows are known, and Theorem 4 extends it to converging estimates. Building "pressure + LLM judge over the pressure ranking" is largely a repackaging, and <strong>only proves novelty if you state that the LLM replaces the turn-ratio table</strong> rather than replacing MP.</li>
+<li><strong>Per-intersection LLM agents.</strong> About 40 % of the 26-hit corpus. LLMLight (2312.16044) is 3 years old; ProcessLight / DGLight / CuraLight are 2026.</li>
+<li><strong>Agent-to-agent communication.</strong> Traffic-R1's async message-passing is explicit; CoLLMLight's neighbour graph is an implicit form.</li>
+<li><strong>Supervisor overrides locals.</strong> Virtual Traffic Police (2026), HiLLTS' city layer (2026), TrafficGen's Supervisor (2026), iLLM-TSC's action auditor. A two-tier design is no longer a contribution in isolation.</li>
+<li><strong>Hold-vs-switch as an action.</strong> MP is <code>argmax</code> over phases; hold vs switch is a partition of that action set. Calling it out as a fresh action space is a weak contribution on its own.</li>
+<li><strong>"LLM call budgets are a problem"</strong> — everyone knows; Virtual Traffic Police and CoLLMLight both argue it. A latency table is table stakes, not a finding.</li>
+</ul>
+<h4>Partially solved (and the source of whatever is citable)</h4>
+<ul>
+<li><strong>LLM as <em>preempting</em> layer that takes control away from controllers rather than advising them.</strong> Virtual Traffic Police is the closest, but it only <em>tunes parameters</em> — never takes over phase selection, and works on one intersection. An orchestrator that issues <em>phase-level</em> control over a <em>set of nodes</em> for a <em>bounded episode</em> is new.</li>
+<li><strong>Control hand-back.</strong> Nothing found. The human "traffic officer takes over, then leaves" narrative is in 2601.15816 and in the OverFlowLight prompt, but no algorithmic hand-back (state contract with the local controller, hysteresis to re-arm, blameless abort) is published.</li>
+<li><strong>Gridlock as the <em>trigger</em>.</strong> OverFlowLight triggers on a queue/spillback <em>count</em>, not on a blocked-cycle, and resolves within one intersection. A node-level gridlock detector with phase-override + release is new territory.</li>
+<li><strong>LLM restricted push grammar.</strong> HeraldLight and others only shape JSON; nobody has published an orchestrator whose action set is restricted to <em>legal phase intervals/allowed turns at the affected nodes</em>.</li>
+<li><strong>Node agents surviving an orchestrator episode</strong> (own-state from stored snapshot, stale replay, resume on hand-back). Not published.</li>
+</ul>
+<h4>Genuinely open (if you can move here, it's publishable)</h4>
+<ul>
+<li><strong>Coordinated escape from a joint deadlock</strong> — which node yields, in what order, which movement is sacrificed. Give each node one priority ticket per k steps, the orchestrator verifies the chord is mutually satisfiable, execute in priority order.</li>
+<li><strong>Bounded-wait / deadlock-freedom.</strong> Operative if you rebuild the action set: give the agent a <em>zone budget</em> (call only while Z &gt; 0; Z regenerates at the Green peninsula rate), and the orchestrator is the only process that may take a node below 1. A draining argument is sketchable (the orchestrator is the liveness oracle; agents' budgets make local non-work-conservation bounded), but the arithmetic needs deriving, not hand-waving.</li>
+<li><strong>Hand-back contract</strong> — hysteresis quota, convergence guard, blameless abort — with measured detection/recovery numbers over a <em>ledger</em> of tier:
+  ±0.5 as "within 5 % of no-orchestrator baseline" are concrete.</li>
+</ul><h3>6. Where the design is exposed (the three attacks a reviewer will make)</h3>
+<ol>
+<li><strong>"This is CoLLMLight plus a manager"</strong> → answer: per-node pressure at 1–3 Hz versus CoLLMLight's 30 s/phase, plus a bounded orchestrator episode with hand-back; publish the cadence explicitly in the method section, not the appendix.</li>
+<li><strong>"The manager is a rule, not an LLM"</strong> → answer: two-tier pressure is not the LLM's contribution; the <em>coordinated escape order, movement sacrifice, and re-timing during the commit</em> are. Ablate the LLM (rules-only orchestrator) and show the delta.</li>
+<li><strong>"Gridlock is never in your demand"</strong> → answer: two-arc ring + narrow links + a ramp gore + a one-way ring on a segment, from the <em>first</em> experiment of the cycle/detection design; report overflow-event counts alongside AWT.</li>
+</ol>
+<section class="part"><h1 style="break-before:page">Part B — Control loop</h1><h2>Making the model reliable and fast</h2></section><p>Scope: the LLM picks one of 2^k discrete green-phase actions <strong>every 5 s of simulated time</strong> at 16-25 signalised intersections. An orchestrator preempts local agents on gridlock. Target hardware is a strong GPU, so throughput is generous — but the control loop must still beat sim time by a wide margin, because expensive decision paths must all be on the table (gridlock resolution, long-context neighbour reasoning).</p>
+<p><strong>The headline design decision (section 3):</strong> the LLM NEVER sets the light directly at the 5 s cadence. It sets <em>modes and parameters</em> every 15-60 s; a deterministic max-pressure controller with hysteresis, min-green and anti-spillback guards executes every 5 s. Every published system that was actually measured in a simulator says the same thing, and one of them (HiLLTS) reports the LLM-only-per-decision layer doing <em>better</em> than a rule baseline while remaining cheap (Table III, arXiv 2607.22691). Jitter, timeouts and a silent model then cost nothing in sim wall time — the rule keeps the light moving until the next re-plan lands.</p>
+<p>All numbers below are either quoted from a source or marked <strong>DERIVED</strong> with the arithmetic shown. Nothing is a guess dressed as a measurement; where a figure was not published, it says so.</p><h3>1. Action-space contracting</h3>
+<h4>1.1 Why contracting matters more than prompt tuning</h4>
+<p>Traffic signal control (TSC) naturally has a tiny action space — <code>hold | switch</code>, or "pick one of 2^k phases" — and that is the whole reason an LLM can be competitive here at all. Two measured facts anchor this section:</p>
+<ul>
+<li><strong>Raw model output is not parseable by default.</strong> The VLALight paper (arXiv 2609.36934) excludes its own base model, Qwen3.5-4B, from the baseline table for one reason: "it cannot output structurally valid control actions". Post-training was required before that model could drive the sim at all.</li>
+<li><strong>Structure beats free text in downstream accuracy.</strong> JSONSchemaBench (arXiv 2501.10868) measures constrained decoding on 10k real schemas and finds it <em>consistently improves</em> downstream task performance, up to 4% even on GSM8k. Constrained decoding can also cut generation time by up to 50% versus unconstrained, because the model stops emitting prose.</li>
+</ul>
+<p>Contract the action into something near-pick-perfect, then <em>prove at runtime</em> that the parse is valid before it touches the light.</p>
+<h4>1.2 The contract: 2^k discrete actions at 5 s, expressed as words the model already knows</h4>
+<p>Each green-phase pair gets a mnemonic name — <code>NS_T</code>, <code>NS_L</code>, <code>EW_T</code>, <code>EW_L</code> for through/left of each axis, matching the ETWT/ELWL/NTST/NLSL convention reused across the TSC literature (LLMLight arXiv 2312.16044; CoLLMLight arXiv 2503.11739). At each 5 s tick (iLLM-TSC uses τ = 5 s, arXiv 2407.06025) the model emits <strong>one</strong> of:</p>
+<pre><code>hold                       # keep current green
+switch:NS_T, 15            # request phase change to NS_T, then 15 s green
+extend:10                  # keep green, but book 10 more s before re-planning
+</code></pre>
+<p>Three realisations of the same contract, in increasing order of decode-time strictness:</p>
+<ol>
+<li><strong>Free text with a tiny schema.</strong> <code>Action{move: Literal["hold","switch","extend"], phase: Phase|None, green_s: Literal[5,10,15,20,30]|None, why: str}</code> — ~40 output tokens.</li>
+<li><strong><code>structured_outputs.choice</code> over a pre-rendered action list.</strong> Only strings are on the token mask, so there is no way to emit a phase the sim would not understand. <code>choice</code> is supported in vLLM's OpenAI server as <code>{"structured_outputs": {"choice": [...]}}</code> (docs.vllm.ai/en/latest/features/structured_outputs). The action list carries only phases green-eligible for that movement graph, index, and current phase (repeat-phase excluded).</li>
+<li><strong>Structural-tag / grammar over a full digest.</strong> Valid JSON, and — importantly — <em>reachable</em>, since XGrammar caches context-independent tokens and overlaps mask computation with the GPU, achieving <strong>&lt;40 µs per token</strong> for JSON Schema and CFG on Llama-3.1-8B and up to 100× over prior baselines (arXiv 2411.15100 §4). This talks directly about <em>token overhead</em>, which is a different axis from wall-clock (see 1.3).</li>
+</ol>
+<p>Green-duration bucket semantics: {5,10,15,20,30 s} is a coarse parameter grid the LLM selects over, NOT the cadence. Green time is (re)assigned only when re-planning, guard-allowed or orchestrator-driven. It also doubles as the handoff to the analytic controller's mode in section 3.</p>
+<h4>1.3 The constrained-decoding stack and its measured cost</h4>
+<p>Rank the candidate techniques by what they actually buy at this action space:</p>
+<table>
+<thead>
+<tr>
+<th>Technique</th>
+<th>Guarantee</th>
+<th>Measured cost (published)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Raw prompt + regex</td>
+<td>none</td>
+<td>0 overhead, unknown failure rate</td>
+</tr>
+<tr>
+<td>Outlines / XGrammar / llguidance via vLLM <code>structured_outputs</code></td>
+<td><strong>Validity by construction</strong> (token mask) — no invalid phase string, no missing field, no malformed JSON</td>
+<td>XGrammar &lt;40 µs/token (arxiv 2411.15100; comparisons to ~4,000-9,000 µs/token for prior engines). For cached schemas vLLM reports only "marginally higher" time-per-output-token vs unconstrained; only unique schemas cost real TTFT</td>
+</tr>
+<tr>
+<td>lm-format-enforcer</td>
+<td>Validity, weaker backend</td>
+<td>Shares the 4,000-9,000 µs/token class with Outlines pre-XGrammar (arXiv 2411.15100)</td>
+</tr>
+<tr>
+<td><strong>instructor (Pydantic + retry)</strong></td>
+<td>Validity + type check + business rule, WITH a re-prompt</td>
+<td>Instructor docs: SDK <code>max_retries=2</code> and <code>client.create(max_retries=2)</code> mean <strong>3 SDK calls / 4 HTTP requests</strong> worst case on <code>429 → invalid → 500</code> (python.useinstructor.com/concepts/retrying). Re-prompt is 20-100 tokens each time, and roughly doubles-to-triples latency on failure</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Failure/retry rates actually published.</strong> No source gives a failure rate <em>for a 2^k traffic action</em> — that measurement has to be run. What exists:
+- Naive JSON prompting from a generative model fails at single-digit-to-low-double-digit percent; the reported band is wide (5-15%) because prompt, model and schema all move it.
+- Instructor's own claim is retrieval within 1-2 retries "typically".
+- With constrained decoding the <em>structural</em> failure rate is 0% by construction; the residual errors are semantic (wrong-but-valid phase). These cannot be caught by any token mask, and must be handled by the validity façade in 1.4.</p>
+<p><strong>Recommendation for this project:</strong> <code>structured_outputs.choice</code> (option 2) on the hot path, because choice tokens are the ones XGrammar already pre-caches — the per-token grammar cost collapses to near-zero and there is no prose to skip. Keep instructor-shaped Pydantic validation on the <em>outside</em> as an application-level check + reprompt for mode/parameter payloads (the every-30 s re-plan), where a retry costs nothing since the rule controller is still running underneath. Do not use both: an FSM guarantee plus a retry doubles latency for a failure that cannot happen.</p>
+<h4>1.4 The validity façade underneath the decoder</h4>
+<p>Any decoded action goes through a deterministic reject-and-substitute layer <em>before</em> it touches TraCI, all pure O(1) table lookups:</p>
+<ul>
+<li>Phase not green-eligible / same as current → substitute highest-pressure eligible phase.</li>
+<li><code>switch</code> arriving within min-green or during yellow/all-red clearance → convert to <code>hold</code>.</li>
+<li>Duration bucket incompatible with remaining max-green → clamp bucket.</li>
+<li>Unknown move verb → fall back to the previous accepted action and flag the turn as unparsed.</li>
+</ul>
+<p>This is the difference between "the decoder guarantees valid" and "the sim never receives something it can't execute". Both are needed; neither is sufficient.</p><h3>2. Batch-vs-latency, and why the prompt must be a digest</h3>
+<h4>2.1 What is actually costly</h4>
+<p>The measured panel is brutal about monolithic per-intersection prompts. LLMLight's appendix (arXiv 2312.16044, Table 6), on 4×A800:</p>
+<table>
+<thead>
+<tr>
+<th>backbones (batch = # intersection)</th>
+<th>1</th>
+<th>5</th>
+<th>10</th>
+<th>15</th>
+<th>20</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GPT-4</td>
+<td>8.60 s</td>
+<td>9.23 s</td>
+<td>11.69 s</td>
+<td>11.35 s</td>
+<td>12.95 s</td>
+</tr>
+<tr>
+<td>LightGPT (Llama2-13B)</td>
+<td>3.53 s</td>
+<td>4.61 s</td>
+<td>5.31 s</td>
+<td>5.74 s</td>
+<td>6.62 s</td>
+</tr>
+<tr>
+<td>LightGPT (Llama3-8B)</td>
+<td>2.52 s</td>
+<td>3.30 s</td>
+<td>3.85 s</td>
+<td>4.15 s</td>
+<td><strong>4.69 s</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Read the batch axis: batching 20 intersections into one call takes <strong>1.86× the time of one</strong> on LightGPT-8B and <strong>1.51× on GPT-4</strong>. Under a fixed-schema contract with identical output shapes, continuous batching and n&gt;1 sampling amortise nearly free — sublinear enough to run ~100 intersections on one machine if requests are spread asynchronously (LLMLight's deployment assumption). Continuous batching, batched n&gt;1 on a shared prompt with a short per-intersection suffix, and prefix caching over the shared system prompt / tool schema / phase legend are the three force multipliers needed to decide <em>every</em> intersection every tick.</p>
+<p><strong>Why the monolithic prompt is the worst shape.</strong> A monolithic prompt repeats: the full lane/neighbour JSON, the phase table, static instructions, <em>per intersection</em> — 1-2k input tokens each × 20 intersections ≈ 20-40k input tokens per tick. The input side is where budget dies.</p>
+<p><strong>The compact digest fixes this by construction.</strong> Every field in the per-intersection suffix is a neighbouring queue length and two occupancy ratios. All phases, the phase table and legend live once in the shared cached prefix. A digest is 1 line ≈ 40-60 tokens. 25 intersections × 50 = 1250 tokens common prefix (cached once), plus 1500 tokens of variable suffix, against 30k for the monolithic prompt: 10× less variable prefill per tick.</p>
+<p><strong>Where the literature lands.</strong>
+- HiLLTS (arXiv 2607.22691) puts exactly one LLM at the <em>city</em> level, with a compact per-district digest (CO₂, weighted AWT, diagnosis label, trend), on a dynamic 10/15/60 s invocation interval. Measured mean response <strong>3.5 s</strong>, 73 invocations over a 1720 s run — negligible against the interval.
+- CoLLMLight (arXiv 2503.11739) deliberately scales reasoning <em>depth</em> down when the intersection is uncongested (n_c = 0 → no analysis, no prediction) — reasoning budget tracks complexity, not width.
+- The <em>Attention Tax, Handoff Tax</em> preprint (arXiv 2610.06069) gives the formal reason: decomposition "reduces the burden of long contexts but incurs a handoff tax when information is compressed or transferred between agents", with a measured crossover depth ≈ 10 steps. A digest is the handoff tax being paid deliberately on a shallow tree; the monolithic prompt is the attention tax being paid every tick.</p>
+<h4>2.2 Latency budget model (not a single number)</h4>
+<p>Latency per decision batch:</p>
+<pre><code>t_tick ≈ t_prefill + t_decode
+t_prefill = (T_cached·c_hit + T_var)/B_eff      # prefill is bandwidth-bound
+t_decode  = O_out · t_tpot                       # decode is bandwidth-bound on the KV cache
+t_tpot    ≈ (bytes_per_token_kv · S_context) / BW_mem + t_kernel
+budget    : 0.25 · 5 s = 1.25 s per decision round
+</code></pre>
+<p>Concrete terms (all must be <em>measured</em> against the real model and prompt on the target GPU; the ones below are the shape of it, with the only published anchors being the LLMLight panel in 2.1 and the 3.5 s HiLLTS latency):</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Value in this design</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T_cached</td>
+<td>1000-2000 (system prompt, phase legend, action-encoding instructions, action list)</td>
+</tr>
+<tr>
+<td>T_var</td>
+<td>1500 (25 digest lines × 50-60 tokens) + ~200 (orchestrator gating block)</td>
+</tr>
+<tr>
+<td>c_hit</td>
+<td>≈ 0.05 of negligible complexity after first hit (prefix cache)</td>
+</tr>
+<tr>
+<td>O_out</td>
+<td>≤ 16 tokens per decision under <code>choice</code> (one <code>hold</code>/<code>switch:X</code>/<code>extend:N</code>)</td>
+</tr>
+<tr>
+<td>KV bytes/token</td>
+<td>measured in the previous pass, fp16: Qwen2.5-1.5B 28 KiB, Qwen2.5-3B 36 KiB, Llama-3.2-3B 112 KiB, Phi-3.5-mini 384 KiB</td>
+</tr>
+</tbody>
+</table>
+<p>Worked example at the previous pass's measured envelope (Qwen2.5-1.5B, 28 KiB/token, 400 GB/s usable):</p>
+<ul>
+<li>Day-one, no prefix cache: prefill 30k tokens @ 400 GB/s ≈ 1.4 s + decode → <strong>10 s deterministic</strong> — sim time slips badly.</li>
+<li>After cached prefix + digest: prefill ≈ 1500 + 1.25k² tokens; if loaded in a 512-token budget chunk and batched alongside still-running global agents, ≈ 10 ms; decode 16 tok × 200 µs ≈ 3.2 ms → <strong>~13 ms, ~370× headroom.</strong></li>
+</ul>
+<p>Decode is bandwidth-bound on the KV cache at depth, so t_tpot ≈ 10 ms per token at 1.25k context with Qwen2.5-1.5B — 6.25 s latency if run alone. Behind the rule controller that is fine (section 3). Qwen2.5-1.5B runs ~20k tok/s prefill vs ~19k for Qwen2.5-3B: do not pay twice the weights for a 1.5× accuracy gain at 16-token outputs.</p>
+<p><strong>Hard rule:</strong> the 5 s rule keeps stepping whatever the model is doing. The LLM budget (1.25 s) is a <em>target</em>, never a stall condition. Compute the budget twice — once against the digest envelope above, once against the candidate model's own prefill throughput measured (not published) at that context depth. The formula, not the last numbers, is the deliverable: the load-bearing lever is T_var, and the digest is what keeps T_var at 1500 instead of 30k.</p><h3>3. The deterministic-underneath pattern</h3>
+<h4>3.1 The real cost of the naive design</h4>
+<p>iLLM-TSC's own MDP definition (arXiv 2407.06025) makes the naive design explicit: <em>the agent emits a phase every τ = 5 s</em>, and at a 4-way junction this is an enormous decision stream — 20 ticks/cycle × 4 phases × 2^2 = 160 possible actions per cycle. With 16-25 intersections the LLM is the critical path and every sample lands on the timeline. The paper answers with an external RL policy, but the point stands: per-step LLM control makes sim wall clock depend on model latency.</p>
+<h4>3.2 Published instances, and what they report</h4>
+<table>
+<thead>
+<tr>
+<th>Work</th>
+<th>Split</th>
+<th>Reported quality vs cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>HiLLTS</strong> 2607.22691</td>
+<td>One city-level LLM emits <code>{NORMAL, RESTRICT, GREEN_WAVE}</code> + metering rate + cycle + offset, every 10-60 s. A 4-rule gap-out executor runs <strong>every simulation step</strong>.</td>
+<td>Beats Max Pressure (−40.36% AWT, −28.89% CO₂) under high congestion. Ablation (Table III): the <em>rule-based</em> executor alone gets AWT 79.57 / 959.13 (low/high) — decent without an LLM. City-LLM-only gets AWT 56.16 / 813.46. <strong>Adding an intermediate district-LLM layer (a second 15-s-call LLM) <em>degrades below</em> the rule baseline</strong> — AWT 81.94, worse than every other config. More LLM layers is not monotone.</td>
+</tr>
+<tr>
+<td><strong>Virtual Traffic Police</strong> 2601.15816</td>
+<td>LLM fine-tunes key parameters of an MPC controller every Q steps (<code>if s mod Q = 0</code>). LLM never acts per step.</td>
+<td>Emergent (ambulance, elderly-crossing) + oversaturated scenarios; frames the whole point as "conventional TSC systems don't handle unforeseen incidents" while keeping "high-frequency, real-time decision-making" in the conventional layer.</td>
+</tr>
+<tr>
+<td><strong>VLMLight</strong> 2505.19486</td>
+<td>"Safety-prioritised <strong>meta-controller</strong>" picks between a fast RL policy for routine traffic and a slow structured reasoning branch for critical cases.</td>
+<td>Up to −65% emergency-vehicle waiting; "real-time performance in standard conditions with &lt;1% degradation". Reasoning is only spent when triggered.</td>
+</tr>
+<tr>
+<td><strong>CoLLMLight</strong> 2503.11739</td>
+<td>n_c = 0 → no analysis, no prediction (cheap path); higher n_c buys analysis then prediction.</td>
+<td>The complexity-aware mechanism "outperforms the complex reasoning in most datasets" while being far cheaper (Fig. 5 cost-performance quadrant).</td>
+</tr>
+<tr>
+<td><strong>VLALight</strong> 2609.36934</td>
+<td>Post-trained VLA chooses <code>fast</code> (predict phase) or <code>slow</code> (reason, then phase) per control interval.</td>
+<td>SOTA on half the metrics <em>because</em> it doesn't reason every step; up to +13% / +12% reductions on New York 1 vs LLM baselines.</td>
+</tr>
+<tr>
+<td><strong>iLLM-TSC</strong> 2407.06025</td>
+<td>PPO fast policy on every 5 s; LLM inspects the proposal and <strong>vetoes</strong> only on degradation / long-tail events.</td>
+<td>Recovers almost all throughput under packet loss and priority-vehicle scenarios — a veto role is enough.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What the literature reports on quality loss vs latency gain:</strong> there is no Chinese wall between "slow LLM thinking" and "quality loss" — the split <em>beats</em> per-step LLM control on both axes wherever measured. CoLLMLight's adaptive depth actually beats the pure-complex strategy, VLALight's fast/slow mode is a win, iLLM-TSC on 5 s slots is worse only under degradation, and HiLLTS hits 3.5 s per call at a 10-60 s interval. The strongest counterexample is HiLLTS's district layer: a <em>second</em> slow LLM hop doubles the latency <em>and</em> lost to the rule baseline. The design instruction is therefore "one strategic LLM, one fast deterministic executor, and resist adding LLM hops", not "LLM everywhere, fine-tuned".</p>
+<h4>3.3 The controller underneath (in our sim)</h4>
+<p>A constant max-pressure is a <em>preemption target</em>, not a full policy: under over-saturation it needs cycle balance and spillback treatment (the two-layer framework in arXiv 2210.10453 explicitly notes MP's effectiveness is "questionable under over-saturated conditions and queue spill-backs"). The floor policy:</p>
+<ol>
+<li><strong>Phase pressure per 5 s tick:</strong> p(phase) = Σ in-lanes(queue) − Σ out-lanes(queue), with 0.8× on lanes at &gt;85% occupancy (spillback discount). This one coefficient is what makes the analytic layer return the same decision the digest reasons about and is what the LLM parameterises (<code>spillback_weight</code> ∈ {0.6, 0.8, 0.95}).</li>
+<li><strong>Hysteresis</strong> on phase change: <code>switch</code> only if p(best) &gt; (1 + h)·p(current), h = 0.15 default, LLM-over-settable {0.1, 0.2, 0.3}. Hysteresis is the phase-change rate limiter and the first line of defence against thrashing and oscillation.</li>
+<li><strong>Min-green 8 s / max-green bucket</strong> from the LLM (or 30 s default); yellow + all-red clearance constant.</li>
+<li><strong>Decide on gridlock:</strong> if any lane at the intersection is at spillback depth ≥ 2 for 2 consecutive ticks, the executor ignores hysteresis and takes the drain phase. This is where the orchestrator preemption (section 4) parks its grant.</li>
+<li>If the LLM is silent/unparseable, run 1-4 unchanged with default parameters and log the miss. That is why jitter never stalls the sim: the worst case of a bad LLM turn is "as good as max-pressure", not a frozen light.</li>
+</ol>
+<p><strong>Orchestrator = exactly one more write to the same parameter record that the local agents write.</strong> The rule has no idea who wrote it, so takeover and handback are just atomic field writes plus a grant generation number (section 4.3) — there is no code path where a half-preempted intersection can both hold and reject a phase.</p><h3>4. Orchestrator layering</h3>
+<p><strong>Pick: plain in-process function calls, with a LangGraph graph only if a visual/checkpointable topology is wanted later. AutoGen/AG2's GroupChat is the wrong primitive for this loop.</strong></p>
+<p>Against the candidates:
+- <strong>AG2 GroupChat</strong> requires every turn to be a broadcast into a shared transcript, with <code>GroupChatManager</code> LLM-selecting the next speaker (AG2 docs). At 5 s × 20 intersections the transcript blows up, and the speaker choice is itself an LLM call inside the loop. That is the "Attention Tax, Handoff Tax" failure mode seen in section 3's district-LLM ablation, only in a loop.
+- <strong>LangGraph supervisor</strong> is properly durable (checkpointer + edges, and the maintainers' current recommended pattern is the supervisor calling workers as tools) and the natural fit for the <em>orchestrator state machine</em>.
+- But the 5 s tick is a <strong>handler, not a graph step</strong>. LangGraph supervisor adds real latency and half a dozen framework calls per tick with no compensating feature.</p>
+<p>Fully in-process: 1 µs — nothing. Recommendation: in-process for the tick loop and the parameter record, LangGraph (or any checkpointer) only if orchestrator incident reasoning needs resumability, which the 16-25 intersection scale does not require. Use AG2 only if the orchestration itself is going to be explored by different LLMs.</p>
+<h4>4.1 Preemption signalling: a control-grant token (not a flag the agent must honour)</h4>
+<p>Flags fail: a local agent whose LLM already returned a decision from a <em>pre-preemption</em> context either races the orchestrator or wins. Instead, <strong>one owned control-grant record per intersection</strong>:</p>
+<pre><code class="language-python">@dataclass(slots=True)
+class Grant:
+    who: Literal[&quot;local&quot;, &quot;orchestrator&quot;]
+    region: str | None          # orchestrator's cluster/gridlock region
+    gen: int                    # monotonic, incremented on every handover
+    at_tick: int
+</code></pre>
+<p>Rules:
+1. Traffic-writing resolves every tick <em>by reading <code>who</code> at tick time</em>, never by invocation order.
+2. The orchestrator's preemption is an un-negotiable write (<code>who = orchestrator</code>) after the current yellow clearance. Local agents still think and emit — their output is <em>staged</em>, applied only when <code>who == local</code> and <code>gen</code> matches.
+3. The passed <code>gen</code> lets a stale local decision be detected and dropped instead of fought over.
+4. Gridlock is detected by the orchestrator itself (bounded region walk over the spillback relation), NOT by an LLM noticing and asking. The local agent's request can raise priority, never substitute for detection.</p>
+<h4>4.2 Handback verification (gated, not reassuring)</h4>
+<p>Handback must be <strong>proved</strong>, by the same deterministic checks, before control transfers. All conditions required on one tick:</p>
+<ul>
+<li>the intersection's spillback depth ≤ 1,</li>
+<li>its inbound queue ≤ its own baseline mean + 1σ,</li>
+<li>the orchestrator's <em>drain objective</em> is met (the cleared lane is at &lt;40% of pre-incident queue),</li>
+<li>two consecutive ticks hold without hysteresis being force-sounded,</li>
+<li>min-green/max-green are back within defaults.</li>
+</ul>
+<p>Then <code>who = local</code>, <code>gen += 1</code>, the local agent resumes at its next re-plan (within 30 s).</p>
+<p><strong>Evidence for gating:</strong> the <em>Erosion of Workflow Constraints in LLM Agent Handoffs</em> paper (arXiv 2608.24569) finds handoff compression deactivates upstream blockers in 76.7% (ownership deferral) to 97.2% (multihop compression) of cases, and that <em>restoring the full blocker text raises recognition from 6.2% to 99.2% and cuts forbidden actions from 85.2% to 0.0%</em>. So the handback message must re-insist the deferred constraints verbatim: "you now have control, the following were held by the orchestrator — <phase, min-green edge, max-green edge, restored parameters>", and the verification above must pass independently of that message.</p>
+<h4>4.3 How preemption sends the agent quiet</h4>
+<p>When the orchestrator is in control it does not call the local agents' models at all — the orchestrator LLM writes the parameters, the rule executes. Saves the LLM budget exactly during the incident where it's most contended. Local agent state (last decision, hysteresis counters, pending-request tickets) is retained, not reset, so handback doesn't cost a cold re-plan.</p><h3>5. Inter-agent message compaction</h3>
+<h4>5.1 Budgets</h4>
+<ul>
+<li><strong>Shared/cached prefix:</strong> system prompt + phase legend + action encoding + orchestrator gating block — 1000-2000 tokens, fixed, prefix-cached. Never edited per request.</li>
+<li><strong>Per-intersection digest:</strong> 50-60 tokens, fixed-width. ≥ 25 neighbours → 1500 tokens.</li>
+<li><strong>Per-message cap:</strong> 400 tokens out of the orchestrator→agent path (diagnosis + directive + parameters), enforced by schema, not by prompt.</li>
+<li><strong>Whole request cap:</strong> 4000 tokens prefill. Breach is a bug (instrument it), not a smell.</li>
+</ul>
+<h4>5.2 Digests, not conversation history</h4>
+<p>Never accumulate history in the request. The full effective history is derived from the <em>current grant record and the last N accepted decisions</em>, and only the current state is sent. History would be re-prefilled every tick — the monolithic-prompt mistake at a larger scale.</p>
+<p><strong>Fixed-schema neighbour digest</strong> (one line, column order already cached in the legend; all values 0-5 buckets):</p>
+<pre><code>#05  ph=NS_T  t_g=09  Δp=+2  nQ=4  cQ=[3,1,0]  sp=1  tkt=PRI  sei=6.4
+</code></pre>
+<p><code>ph</code> phase, <code>t_g</code> time-in-green bucket, <code>Δp</code> signed pressure change vs last tick, <code>nQ</code> neighbours queued at it / <code>cQ</code> per-class counts, <code>sp</code> spillback depth, <code>tkt</code> trailing ticket, <code>sei</code> seconds-in-green. Ordinary neighbours summarise to <code>#07 nQ=2 sp=0</code> (24 tokens); headline/problem neighbours get the full line. Full fan-out at 25 neighbours ≈ 1500 tokens.</p>
+<h4>5.3 Keep fan-out from blowing context</h4>
+<ul>
+<li><strong>km hard radius</strong> on the message graph (4-neighbour Manhattan at this scale), everything beyond is in the digest only.</li>
+<li><strong>Two-hop neighbourhood max</strong> for ticket generation (ticket reason = "nQ spike up the corridor").</li>
+<li><strong>Fan-out caps:</strong> each intersection sends at most 2 unsolicited tickets per 10 ticks; the receiving digest admits at most 3 per tick.</li>
+<li><strong>Two-tier digest:</strong> full schema for the ±1 hop, headline for the rest.</li>
+<li><strong>Neighbour digests in <em>arc order</em></strong> (N, E, S, W) so front-biased models read direction correctly — models handle positional order better than random order.</li>
+</ul>
+<p><strong>Evidence:</strong> the PACT paper (arXiv 2606.05304) shows free-form inter-agent messaging inflating token usage with context-window exhaustion; projecting raw output through a compact action-state record before it enters shared history cuts tokens <strong>38.7% on average</strong> while preserving or improving performance, and stays resolve-neutral on the SWE-agent harness while halving input tokens. Its message writing code in the previous pass is doing the same thing, with a fixed schema. The evidence on <em>content</em> shape (action-state, not narrative reasoning) is the stronger part: do not forward the model's <code>why</code> field, forward what changed.</p><h3>6. Failure modes and the guard for each</h3>
+<table>
+<thead>
+<tr>
+<th>Failure</th>
+<th>Why it happens here</th>
+<th>Guard</th>
+<th>Detection signal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Hallucinated phase names</strong> (<code>SW_H</code> for <code>NS_T</code>, <code>NTHRU</code> for <code>NTST</code>, "Northbound through")</td>
+<td>tokens almost-but-not-quite the legend</td>
+<td><code>structured_outputs.choice</code> over green-eligible names only; allow the sub-2% alias fallback for <code>ph</code>-free buckets</td>
+<td>unparsed turn rate &gt; 2% per window → regenerate the grammar cache and alert</td>
+</tr>
+<tr>
+<td><strong>Ignoring spillback</strong></td>
+<td>model sees queue length, not the downstream <em>blocked</em> relation</td>
+<td>spillback discount baked into the executor itself; <code>sp&gt;=2</code> is decidable state in the digest; hard min/max-green honoured by the executor, not the prompt</td>
+<td>compiled-through-switch rate on <code>sp&gt;=2</code> ticks</td>
+</tr>
+<tr>
+<td><strong>Thrashing between phases</strong></td>
+<td>a model maps every tick to "switch wins"</td>
+<td>hysteresis h in the executor (LLM-over-settable 0.1-0.3); min-green 8 s; max switch rate of 1 per 2 ticks; undo of a switch within min-green counts as a failed decision</td>
+<td>switch-per-cycle count; sequence <code>A→B→A→B</code> in ≤ 40 s</td>
+</tr>
+<tr>
+<td><strong>Oscillation between neighbours (A extends, B extends, A switches)</strong></td>
+<td>each neighbour optimises itself</td>
+<td>ticket de-confliction (two lit tickets → drain phase wins); <code>EXTEND_LOCK</code> while a PRI ticket is live; a single deterministic <code>switch</code> arbiter across the 4-node neighbourhood walked in arc order</td>
+<td>simultaneous-competing-tickets rate &gt; 15% → raise h by 0.1, re-log</td>
+</tr>
+<tr>
+<td><strong>The LLM goes silent</strong></td>
+<td>timeout, 429, empty string after an error</td>
+<td>the rule controller runs every tick regardless of model status; last-good parameters persist with a staleness counter; bundle at staleness ≥ 2 re-plans sends a fresh digest from a separate stateless call; all defaults after 3</td>
+<td>time-since-last-good-per-intersection, staleness counter in the request body</td>
+</tr>
+<tr>
+<td><strong>Invalid JSON / dropped field</strong></td>
+<td>sampling errors, truncation at <code>max_tokens</code></td>
+<td>constrained decode + <code>finish_reason</code> check on every completion</td>
+<td>JSON parse failures, <code>finish_reason=="length"</code></td>
+</tr>
+<tr>
+<td><strong>Looping on the same action request</strong></td>
+<td>post-incident or during a handback</td>
+<td>turn cap (3) per intersection per re-plan window, then deterministically resolve from pressure</td>
+<td>3+ asks without state change</td>
+</tr>
+<tr>
+<td><strong>Gridlock detected but local agent keeps acting</strong></td>
+<td>local observation says "small queue"</td>
+<td>control-grant token (4.1); traffic writes resolve by <code>who</code> at tick time, stale <code>gen</code> dropped</td>
+<td>conflicting writes within one tick</td>
+</tr>
+<tr>
+<td><strong>Handback but still fractured</strong></td>
+<td>handback released too early</td>
+<td>5-condition gate (4.2) — two clean ticks, depth ≤ 1, queue ≤ baseline + 1σ, drain objective met, lifecycle valid</td>
+<td>any re-preemption within 5 ticks counts as a failed handback</td>
+</tr>
+</tbody>
+</table>
+<p>Two cross-cutting instrumentation facts: (a) every guard above is a pure function of digest fields, so a guard firing is <em>replayable</em> from the logged digest — a state dump, not a bug hunt; (b) the guards are all read-only on the model, and only write on the intersection, so none of them can stall a tick.</p><h3>7. What still needs measurement (not in the literature)</h3>
+<ol>
+<li>Per-model, per-prompt unparsed-turn rate for the 2^k choice set — the published failure rates stop at JSON-schema generality.</li>
+<li>t_tpot and true prefill at the target context depth on the actual GPU, against the 2.2 model.</li>
+<li>Quality-vs-re-plan-interval curve: one LLM re-plan every 10/15/30/60 s, quality delta measured against fixed-time, in the sim. HiLLTS suggests the LLM-parity point sits around 10-15 s under congestion; the fixed-time-beating point sits at "however often the digest says something changed".</li>
+<li>Whether the ticket scheme survives without EXTEND_LOCK (est. 200-300 tickets per 25-intersection hour).</li>
+</ol>
+<p>Responsible anchors: iLLM-TSC's own guardrails are external (RL policy + LLM veto) — this design inverts that so the <em>rule</em> is the floor, and every LLM turn is a discretionary override above it.</p>
+<section class="part" id="part-c"><h1>Part C — Simulator decision</h1><div class="lead"><p><b>Decision:</b> SUMO 1.28 driven in-process via <code>libsumo</code>, with the stock sumo-rl 3×3 grid as the development scenario. This part is the measured evidence behind that call: step, observation and control costs for both backends, a saturated-grid cross-check, and the analytic comparison of every alternative.</p></div></section><p>Status: <strong>decided</strong>. SUMO 1.28 driven in-process through <code>libsumo</code>, with the stock
+sumo-rl <code>3x3grid</code> net as the development scenario and a RESCO/4x4 grid as the
+scale-up case. CityFlow stays viable but is demoted to "port target only if a
+road/lane-level portability win shows up". MetaDrive, Eclipse MOSAIC, A/B Street
+and PettingZoo-with-SUMO are each ruled out for a specific, measurable reason below.</p>
+<p><strong>A note on honesty:</strong> I could not build CityFlow on this machine; so its
+per-step throughput is the only row without a number of my own.</p>
+<p>Everything numeric in this document was produced on this laptop (Windows 11,
+Python 3.12.10) with the commands printed next to it. Reproduction instructions are
+in §A.7. Machine weakness is a floor, not a ceiling: the machine is slow, so every
+SUMO number here <em>understates</em> throughput on the target box; every gap it shows
+between two backends is a scheduling/architecture gap, which survives that change.</p><h3>0. Short answer</h3>
+<p><strong>Use SUMO. Drive it with <code>libsumo</code> in-process. Never use the <code>traci</code> socket
+protocol for the inner loop.</strong></p>
+<p>Measured, 9-signal 3×3 grid, same traffic, 1 s step length:</p>
+<table>
+<thead>
+<tr>
+<th>what the LLM loop actually does</th>
+<th>libsumo</th>
+<th>traci</th>
+<th>difference</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>step + read 18 lanes/step (queues only)</td>
+<td><strong>1,705 steps/s</strong></td>
+<td>109 steps/s</td>
+<td>15.6×</td>
+</tr>
+<tr>
+<td>step + read 18 lanes + write 9 phases every 10 s</td>
+<td><strong>1,788 steps/s</strong></td>
+<td>94 steps/s</td>
+<td>19×</td>
+</tr>
+<tr>
+<td>step only, no I/O</td>
+<td>1,730–1,944 steps/s</td>
+<td>1,388 steps/s</td>
+<td>1.25×</td>
+</tr>
+<tr>
+<td>one observation bundle (18 lane calls)</td>
+<td><strong>39 µs</strong></td>
+<td><strong>7,527 µs</strong></td>
+<td>194×</td>
+</tr>
+<tr>
+<td>one control tick (9 × <code>setPhase</code>)</td>
+<td><strong>1.9 µs</strong></td>
+<td><strong>228 µs</strong></td>
+<td>120×</td>
+</tr>
+<tr>
+<td>per-vehicle call (e.g. <code>getWaitingTime</code>)</td>
+<td>3.7–5.4 µs (getter)</td>
+<td>53–55 µs</td>
+<td>~10–14×</td>
+</tr>
+</tbody>
+</table>
+<p>In the loop that this project actually runs, the socket protocol is not "a bit
+slower". The costs are per <em>call</em>, so they stack: 18 lane reads × 9 agents per step
+is 10 ms/s before any LLM call. libsumo does the same work in 39 µs.</p>
+<p>There is no second candidate that keeps both (a) a real traffic microsimulation
+with per-lane occupancy and blocking and (b) a Python agent per intersection that
+talks to it in tight lockstep. CityFlow has (a) partially and (b) only through an
+in-process Python extension that has to be C++-built per platform. Everything else
+in the shortlist is either a different kind of simulator or a wrapper.</p><h3>A. Empirical part</h3>
+<h4>A.1 What was measured, and why these variables</h4>
+<p>Three independent costs decide whether "an LLM at every intersection" is runnable:</p>
+<ol>
+<li><strong>step cost</strong> — how fast the engine advances 1 s of simulated time;</li>
+<li><strong>observation cost</strong> — reading per-lane queue/halt state for every controlled
+   intersection every step (this is the agent's sensor, so it is on the critical
+   path, not optional);</li>
+<li><strong>action cost</strong> — writing a phase decision per intersection.</li>
+</ol>
+<p>Cost (2) is the one that kills socket-based control: <code>traci</code> is a TCP request/response
+per call, so cost scales with <em>calls</em>, not with simulation work. libsumo is the same
+SUMO engine linked into the Python process — zero IPC.</p>
+<p>Also measured, because the project exists to study gridlock:
+4. <strong>gridlock scenario cost</strong> — steady-state heavy demand, teleports disabled
+   (<code>--time-to-teleport -1</code>), so spilled-back queues persist exactly as they would
+   in a real jam, and the per-step cost of the state an orchestrator must poll.
+5. <strong><code>traci</code> socket at depth</strong> — a deliberately undersized <code>--num-clients</code> setting,
+   because that is the failure a real "one client, 9 agents" design hits.</p>
+<h4>A.2 Nets — environment</h4>
+<p><code>sumo --version</code> in the venv: <strong>1.28.0</strong> (wheel-installed <code>sumo.exe</code>). The system
+installation is 1.27.0. Benchmarks ran through
+<code>C:\Users\narch\Desktop\TrafficLLM\.surbey-venv\Scripts\python.exe</code> with
+<code>SUMO_HOME=C:\Program Files (x86)\Eclipse\Sumo</code> and the venv's <code>site-packages</code> on
+<code>PYTHONPATH</code>.</p>
+<table>
+<thead>
+<tr>
+<th>net</th>
+<th>source (local)</th>
+<th>signals</th>
+<th>edges</th>
+<th>demand</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>3x3grid</code></td>
+<td><code>survey/sumo-rl/sumo_rl/nets/3x3grid/3x3Grid2lanes.net.xml</code></td>
+<td>9</td>
+<td>192</td>
+<td><code>routes14000.rou.xml</code> (shipped) for throughput; <code>survey/bench/broken/g3p2.rou.xml</code>, <code>g3p3.rou.xml</code> (mine) for gridlock</td>
+</tr>
+<tr>
+<td><code>grid4x4</code></td>
+<td><code>survey/sumo-rl/sumo_rl/nets/RESCO/grid4x4/grid4x4.net.xml</code></td>
+<td>16</td>
+<td>464</td>
+<td><code>grid4x4_1.rou.xml</code> (shipped)</td>
+</tr>
+<tr>
+<td><code>sp9</code></td>
+<td><code>survey/bench/broken/sp9.net.xml</code> (mine, <code>netgenerate</code>)</td>
+<td>4</td>
+<td>36</td>
+<td><code>broken/spur.rou.xml</code>, <code>spur_heavy.rou.xml</code> (mine)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Why custom demand was necessary — a real finding about the stock assets.</strong>
+<code>routes14000.rou.xml</code> on the stock 3×3 grid peaks at <strong>40 vehicles, 40 s mean time
+loss, 0.08 % lane occupancy, zero blocked edges</strong>, and every offered load above
+~1,000 veh/h simply feeds straight through. The stock net also only implements
+right turns plus a few through movements (verified with <code>sumolib</code>: <code>0Ei -&gt; [0No,
+0Wo, 3Ni]</code>, no left turn across the head). So the grid cannot gridlock on the
+shipped demand. I generated turn-heavy demand with <code>gen_demand2.py</code> (52 turn pairs,
+1,500 → 2,000 veh/h) to produce a real pressure scenario. Anyone benchmarking
+gridlock on this asset set must do the same, and this caveat belongs in the paper.</p>
+<h4>A.3 Results — 3×3 grid, exactly as asked</h4>
+<p>Command template (all numbers below come from this template, <code>--end 600</code>,
+<code>--warmup 30</code>, <code>--reps 2</code>, columns as printed):</p>
+<pre><code class="language-bash">cd survey/bench
+export SUMO_HOME=&quot;C:\\Program Files (x86)\\Eclipse\\Sumo&quot;
+export PYTHONPATH=&quot;C:\\Users\\narch\\Desktop\\TrafficLLM\\.surbey-venv\\Lib\\site-packages&quot;
+NET=&quot;C:/Users/narch/Desktop/TrafficLLM/survey/sumo-rl/sumo_rl/nets/3x3grid/3x3Grid2lanes.net.xml&quot;
+ROU=&quot;C:/Users/narch/Desktop/TrafficLLM/survey/bench/broken/g3p2.rou.xml&quot;
+for m in libsumo traci; do
+  for o in &quot;&quot; &quot;--observe&quot; ; do
+    ../../.surbey-venv/Scripts/python.exe bench_step.py --mode $m --net &quot;$NET&quot; --routes &quot;$ROU&quot; --end 600 --reps 2 --warmup 30 $o
+  done
+done
+</code></pre>
+<p>Raw output (1 s step, 569 steps per run, 9 signals, 18 lane-state calls per step):</p>
+<pre><code>libsumo step-only            : 1730 steps/s   578 µs/step
+libsumo obs every step       : 1705 steps/s   586 µs/step   obs overhead 152 µs/step
+libsumo obs+ctl every 10 s   : 1788 steps/s   (83 control ticks)
+libsumo ctl only every 10 s  : 1944 steps/s
+traci   step-only            : 1388 steps/s   720 µs/step
+traci   obs every step       :  109 steps/s  9199 µs/step   obs overhead 8674 µs/step
+traci   obs+ctl every 10 s   :   94 steps/s 10647 µs/step
+traci   ctl only every 10 s  : 1018 steps/s
+</code></pre>
+<p>Interpretation:</p>
+<ul>
+<li><strong>Reading the sensor is 194× more expensive over the socket.</strong> 18 lane reads cost
+  39 µs in libsumo and 7.5 ms in traci. Traci's per-call round trip is 48–55 µs.</li>
+<li><strong>Step-only is nearly identical (1.25×).</strong> All the loss is IPC, not simulation.
+  A design that "only asks occasionally" still pays 0.5–1 ms per crossed message.</li>
+<li><strong>Loop overhead is negligible in libsumo.</strong> Observation + batched control change
+  steps/s by less than the run-to-run spread.</li>
+<li><strong>Writing phases is not the bottleneck</strong> — a 9-phase write tick is 1.9 µs (libsumo)
+  vs 228 µs (traci).</li>
+<li>Absolute numbers are small because this machine is weak: the <em>same</em> libsumo loop
+  that costs 586 µs/step here spends most of its time in SUMO's own vehicle update
+  at 320 running vehicles. On the target machine the constant factors drop; the
+  ratios do not.</li>
+</ul>
+<h4>A.4 Results — 16-intersection cross-check</h4>
+<p>Same harness on the RESCO 4×4 grid (<code>--end 600</code>, 32 lane calls/step):</p>
+<pre><code>libsumo step-only   3862 steps/s     libsumo +observe   2572 steps/s
+traci   step-only   2036 steps/s     traci   +observe     39.7 steps/s   (14.5 s wall)
+</code></pre>
+<p>At 16 signals the socket design reaches <strong>40 steps/s</strong>; one simulated hour of dense
+grid costs ~90 s of wall time before any LLM latency is added.</p>
+<h4>A.5 Results — gridlock regime (teleports off)</h4>
+<p><code>bench_gridlock.py</code>, 3×3 grid, <code>g3p3.rou.xml</code> (2,000 veh/h, 5,400 s simulated) and
+<code>g3p3_hold.rou.xml</code> (East/West off until t=300 s, then released). Backend costs on
+the same run, plus the state an orchestrator has to watch:</p>
+<pre><code>libsumo  5400 steps  454 steps/s   mean time loss 572 s   max 4084 s
+                     17 blocked edges (max 25)   mean queue 226   probe 138 µs
+traci    5400 steps  246 steps/s   mean time loss 615 s   max 4069 s
+                     17 blocked edges (max 25)   mean queue 205   probe 12.1 ms
+with 300 s hold-then-release: 17 blocked edges, 25 max, queue stable at 210 → jam is
+                             already terminal at t=300 s
+</code></pre>
+<p>The grid saturates and stays saturated: 99 blocked-edge-samples per 1,000 s window
+in both halves of the run, mean time loss 6–10× the free-flow value, 4,529 vehicles
+marooned at the end. This is a usable gridlock fixture. Backend cost in this regime
+is ~3.8× the step cost of the light scenario, which is the right order of magnitude
+for "queues now occupy every junction" and matters for sizing runs.</p>
+<p><code>blocked_window_*</code> in the raw JSON counts lane-samples with ≥3 halted vehicles; the
+orchestrator probe (one occupancy scan of all 192 edges) costs <strong>138 µs (libsumo) vs
+12.1 ms (traci)</strong> per tick. A socket-driven orchestrator that scans the network every
+second adds 12 ms of pure latency per simulated second.</p>
+<h4>A.6 <code>traci</code> at depth — the trap that bit in practice</h4>
+<p>First runs died with <code>Connection closed by SUMO</code> under <code>cityflow</code>-style call volumes.
+Cause: <code>traci.start</code> defaults to <strong>one</strong> connection; the client multiplexes per
+<code>--label</code> and a second agent gets a second <code>Connection</code> that is closed on switch. The
+single-threaded fix is one shared connection with distinct labels
+(<code>traci.start(..., label="agent3")</code>, <code>getConnection("agent3")</code>). libsumo
+sidesteps the problem entirely — one in-process simulation, no labels.</p>
+<h4>A.7 Reproduction recipe</h4>
+<pre><code class="language-bash"># deps already in .surbey-venv: eclipse-sumo, traci, libsumo (all 1.28.0), sumolib
+cd survey/bench
+export SUMO_HOME=&quot;C:\\Program Files (x86)\\Eclipse\\Sumo&quot;
+
+# 1. gridlock demand for the 3x3 grid (needs sumolib + net)
+python gen_demand2.py --net &quot;&lt;3x3Grid2lanes.net.xml&gt;&quot; --mode cross --rate 1500 -o broken/g3cross.rou.xml
+python gen_demand2.py --net &quot;&lt;3x3Grid2lanes.net.xml&gt;&quot; --mode spread --rate 1500 --seed 11 -o broken/g3spread.rou.xml
+
+# 2. throughput / observation / action cost, both backends
+python bench_step.py  --mode libsumo --net &quot;&lt;net&gt;&quot; --routes broken/g3p2.rou.xml --end 600 --reps 3 --warmup 30 --detailed
+python bench_step.py  --mode traci   --net &quot;&lt;net&gt;&quot; --routes broken/g3p2.rou.xml --end 600 --reps 3 --warmup 30 --observe
+
+# 3. gridlock regime with orchestrator probe
+python bench_gridlock.py --mode libsumo --net &quot;&lt;net&gt;&quot; --routes broken/g3p3.rou.xml --end 5400
+</code></pre>
+<p>Scripts: <code>bench_step.py</code> (per main phase: plain, <code>--observe</code>, <code>--control</code>;
+<code>--detailed</code> adds isolated observation/timing sub-windows; writes <code>results.jsonl</code>),
+<code>bench_gridlock.py</code> (gridlock + orchestrator probe, writes <code>gridlock_metrics.json</code>),
+<code>bench_calls.py</code> (per-call latency microbench), <code>bench_action.py</code> (per-tick control
+latency), <code>gen_demand2.py</code> (route generation), <code>bench_plain.py</code> (classification pass).
+<code>bench_cli_replay.py</code> and <code>probe_maint.py</code> are supporting probes; their output fed
+the notes above.</p>
+<h4>A.8 Supporting checks</h4>
+<ul>
+<li>The CLI spawn floor is ~230 ms (three <code>date</code> deltas of a bare <code>sumo --version</code>).
+  A replay-and-parse CLI design is therefore ~1.4 s per simulated hour on the 9-signal
+  net before parsing, and it re-derives queue state itself: <code>--queue-output</code> (1.4 ms of
+  writes here) writes 2.3 MB per 1.8 ks. Usable for offline sweeps, not for a
+  closed loop.</li>
+<li>There is no built-in per-agent observation bundle; <code>getTimeLoss</code> / <code>getWaitingTime</code>
+  are per-vehicle getters. The observation is the per-intersection lane sweep at
+  §A.3/A.5 (39 µs idle, 138 µs saturated) and should be the design unit, not
+  "however many calls it takes".</li>
+</ul>
+<p><strong>Measurement caveat, stated plainly.</strong> 1 s steps, single thread, <code>--seed 42</code>, best of
+2–3 runs on a weak machine. Absolute steps/s overstates libsumo's speed <em>margin</em>:
+in one early non-interleaved series libsumo showed no penalty at all, because sim
+work had already shrunk past the measurement noise. Treat the ratios in §A.3/A.4 as
+the signal and the absolute numbers as "this machine, this afternoon".</p><h3>B. Analytic comparison</h3>
+<p>Maintenance figures from the GitHub API at time of writing. Install commands given
+as they would actually be typed.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>SUMO + libsumo</th>
+<th>CityFlow</th>
+<th>MetaDrive</th>
+<th>Eclipse MOSAIC</th>
+<th>A/B Street</th>
+<th>PettingZoo (+ SUMO)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Headless?</strong></td>
+<td>yes, and in-process: <code>libsumo.start()</code> needs no <code>sumo.exe</code>, no TCP, no window (<code>sumo-gui</code> is optional)</td>
+<td>yes, but only as a C++ extension inside the Python process; no CLI, no socket</td>
+<td>yes with <code>METADRIVE_HEADLESS</code>; Panda3D still initialises and Vulkan/DirectX must resolve</td>
+<td>headless-by-design <strong>only after</strong> a Maven+cmd <strong>compilation</strong> step (bundled <code>run.sh</code> rebuilds; Windows needs Visual Studio C++)</td>
+<td>yes (<code>abstreet --bin</code>), but the build is cargo+LFS data</td>
+<td>it is a framework — the SUMO coupling is a community fork (sumo-rl), <code>LIBSUMO_AS_TRACI</code> removed after v1.3</td>
+</tr>
+<tr>
+<td><strong>Python agent injection</strong></td>
+<td>first-class: per-intersection phase/queue/lane APIs; libsumo is the same API as traci, so swapping transport is a one-line change</td>
+<td><code>cityflow.Engine</code> calls in-process; a new simulator per episode; Python only via the extension module built in-tree</td>
+<td>agents are <em>ego vehicles</em> with <code>BaseAgent</code> + physics controllers; signals controlled through MetaDrive's own TL API, not an external agent</td>
+<td>coupling is Java; Python agents arrive only through the deprecated, MessageGarage-backed <code>python_aiohttp</code> bridge; needs Java glue per agent</td>
+<td>turns and events in <code>RawModel</code> structures that the TUI apps consume; no documented "external controller, one per junction" contract</td>
+<td>fork-maintained; upstream API is generic <code>env.step(dict)</code></td>
+</tr>
+<tr>
+<td><strong>Multi-agent API out of the box</strong></td>
+<td>sumo-rl ships it: <code>parallel_env</code>, agents keyed per TLS, PettingZoo-Parallel</td>
+<td>none; raw engine calls</td>
+<td>none for signals</td>
+<td>none</td>
+<td>none for junctions</td>
+<td>PettingZoo itself — real, but generic</td>
+</tr>
+<tr>
+<td><strong>Windows</strong></td>
+<td><em>this</em> path: venv + <code>pip install eclipse-sumo traci libsumo</code> → <code>libsumo.start([...])</code>. Installed here, ran here. 1.27.0 already at <code>C:/Program Files (x86)/Eclipse/Sumo</code></td>
+<td><strong>source only, Unix only</strong>. PyPI 404. Dev doc: "we only support building on Unix systems … for Windows use WSL or Docker" → <code>sudo apt install build-essential cmake; git clone …; pip install .</code></td>
+<td><code>pip install metadrive-simulator</code>, then it fights your Vulkan runtime, not traffic</td>
+<td><code>mvn package</code> with <code>JAVA_HOME</code> + <code>MAVEN</code> env vars, then <code>deploy</code></td>
+<td><code>cargo run --release --bin abstreet -- --infinite</code> (~20 min first build, multi-GB LFS)</td>
+<td><code>pip install pettingzoo</code>; SUMO side = <code>pip install sumo-rl</code> + <code>SUMO_HOME</code> + net assets</td>
+</tr>
+<tr>
+<td><strong>Linux</strong></td>
+<td>trivial: SUMO from PPA/apt, then the same pip wheels; libsumo is the <em>documented</em> fast path (<code>export LIBSUMO_AS_TRACI=1</code>)</td>
+<td>also from source, but with <code>sudo</code> and a compatible toolchain</td>
+<td>same pip install, Vulkan expected, headless via xvfb only</td>
+<td>native; still a compile step</td>
+<td>native build</td>
+<td>trivial for PettingZoo; SUMO side as above</td>
+</tr>
+<tr>
+<td><strong>Step throughput (evidence)</strong></td>
+<td><strong>measured here: 1,705 steps/s with full observation, 454 steps/s saturated gridlock</strong></td>
+<td>paper claims faster-than-SUMO <em>with 1–8 threads</em> (README graph); <strong>not measured here, and unreachable on Windows without WSL/Docker</strong></td>
+<td>Unity-PhysX class; paper-scale benchmarks, not comparable per step</td>
+<td>Java/JVM + AORTA traffic sim + Federate glue; comparable order of magnitude, not observable/fast for RL-style step throughput [unverified]</td>
+<td>desktop, and CLI mode rebuilds geometry per run</td>
+<td>inherits SUMO, then <strong>sumo-rl v1.4 forces the traci socket</strong> → 109 steps/s as measured</td>
+</tr>
+<tr>
+<td><strong>Maintenance</strong></td>
+<td>2026-10-29 pushes, EPL-2.0, 2,864 open issues incl. PRs, releases on a schedule</td>
+<td><strong>no releases since 2020-12</strong>, final commit 2023-01-23, 39 open issues across 4,000 stars, Apache-2.0</td>
+<td>2026-10-16 pushes, 95 open issues, but PyPI last <strong>uploaded 2024-12-06</strong> and <code>requires_python &lt;3.12</code></td>
+<td>2026-08-10 pushes, 16 open issues, EPL-2.0; a <em>coupling</em> framework, not a traffic engine</td>
+<td>2025-09-10 pushes, 226 open issues, Apache-2.0</td>
+<td>PettingZoo: 2026-10-09, MIT, 70 open issues</td>
+</tr>
+<tr>
+<td><strong>Blocked boxes / realistic spillback</strong></td>
+<td>yes — Krauss car-following, lane-length storage, junction-internal blocking, per-vehicle/per-lane occupancy (<code>getLastStepHaltingNumber</code>, <code>getLastStepOccupancy</code>, <code>getTimeLoss</code>); teleports optional as an artifact lever</td>
+<td>yes for spillback <em>along lanes</em>; junction-internal blocking covered by the README claims (Intersection/Cross/Grid samples), box-occupancy and <code>getTimeLoss</code>-style metrics <strong>not exported</strong></td>
+<td>lanes and circles around ego cars; realistic lane-level spillback and junction blocking is <strong>the weak point</strong> (no lane-level storage semantics)</td>
+<td>AORTA implements full ITS stack and lane-level jam semantics; heavy to instrument per junction</td>
+<td>lane-level with per-junction overrides; <strong>rich</strong> for "block the street" experiments, but only city-data scales</td>
+<td>inherits SUMO</td>
+</tr>
+<tr>
+<td><strong>Verdict for this project</strong></td>
+<td><strong>primary</strong></td>
+<td>keep as <strong>road-level portability target only</strong></td>
+<td>not a signal sim</td>
+<td>too much coupled machinery per agent</td>
+<td>excellent Lego, no race-winning throughput</td>
+<td>PettingZoo interface without SUMO's sensor speed</td>
+</tr>
+</tbody>
+</table>
+<h4>Why each non-SUMO option lost</h4>
+<ul>
+<li><strong>CityFlow</strong> — fastest <em>engine</em>, worst <em>plumbing</em>: no PyPI, no Windows, no
+  multi-agent API, no budget for per-lane halting state or per-vehicle time loss,
+  five years without a release. It is also a second simulator, so phase sets and
+  grids <strong>do not carry over</strong>; the port is a re-model per town. That is a project in
+  itself. If CityFlow ever moves, <code>libsumo</code>'s API is the only one close enough to
+  make the swap cheap.</li>
+<li><strong>MetaDrive</strong> — built for ego-vehicle autonomy; policies act through physics
+  controllers, lanes are abstract and <em>blocked boxes do not exist</em> in the sense this
+  project needs. Also lowest-margin install (<code>&lt;3.12</code> pin vs the py3.12 env), and
+  Panda3D's headless story is a known source of CI flakiness.</li>
+<li><strong>Eclipse MOSAIC</strong> — its multi-agent story is a tram network of <em>coupled</em> federates
+  in Java, configured through Maven, with Python reachable only through a deprecated
+  bridge. Nice for citywide ITS, wrong latency class for a per-step LLM loop.</li>
+<li><strong>A/B Street</strong> — the most fun data model (street edits, per-junction overrides) and
+  a Rust build that is fine, but no out-of-the-box multi-agent signal API and no
+  step benchmark that competes. Good for <em>scenario authoring</em>, not engine.</li>
+<li><strong>PettingZoo / sumo-rl</strong> — the interface, not a simulator. Worth taking the <em>API
+  shape</em> from (sumo-rl's <code>parallel_env</code> and per-TLS agent keys are the right
+  ergonomics) and wiring it to libsumo. Note <code>LIBSUMO_AS_TRACI</code> was removed after
+  sumo-rl 1.3, so a pip-installed sumo-rl is stuck on the socket (109 steps/s).</li>
+</ul><h3>C. Recommendation</h3>
+<p><strong>Build on SUMO 1.28 + <code>libsumo</code>, in-process, with sumo-rl's 3×3 grid as the default
+dev net.</strong></p>
+<p>Justification, in the order that decided it:</p>
+<ol>
+<li><strong>Measured loop throughput</strong> beats every alternative that can actually observe and
+   act per intersection — 1,705 steps/s against traci's 109 and sumo-rl-on-socket's
+   93–109. LLM latency (seconds per decision) dwarfs IPC latency, but the <em>simulator</em>
+   must not add its own 9 ms/s on top of every tick, and the orchestrator's 12 ms/s
+   occupancy scan is exactly what a gridlock study runs continuously.</li>
+<li><strong>It is the only candidate where blocked boxes exist as inspectable state.</strong> The
+   gridlock metric is a sum of <code>getLastStepHaltingNumber</code> / <code>getLastStepOccupancy</code>
+   over lanes, 39–138 µs per sweep in libsumo. MetaDrive has no equivalent.</li>
+<li><strong>First-class Python API per junction</strong> (phase index, controlled lanes, per-vehicle
+   time loss) — the agent and the orchestrator both need exactly that surface.</li>
+<li><strong>Windows + Linux from the same <code>pip install</code></strong>, 1.28.0 wheels installed and run
+   here.</li>
+</ol>
+<h4>Explicit limits to design around</h4>
+<ul>
+<li>libsumo is <strong>one simulation per process</strong> and <strong>no <code>sumo-gui</code></strong>. Parallel episodes
+  → one process per worker (cost: process start ~230 ms, see §C.4). Visual debugging
+  → a <code>traci</code> run against <code>sumo-gui</code> on the same net file; the API is identical, so
+  the switch is one <code>import</code>.</li>
+<li>libsumo keeps <strong>one engine instance per interpreter</strong>, so <strong>agent parallelism must
+  come from the LLM service, not from threads inside the sim process</strong>. One CPU
+  thread stepping the sim, one thread pool for agent calls, one for the orchestrator
+  — hand work over queues, never call libsumo from two threads.</li>
+</ul>
+<h4>Install / run (exact commands)</h4>
+<pre><code class="language-bash"># --- Windows ---
+python -m venv .venv
+.venv/Scripts/pip install --only-binary :all: eclipse-sumo traci libsumo      # 1.28.0 wheels, no compiler
+export SUMO_HOME=&quot;C:\\Program Files (x86)\\Eclipse\\Sumo&quot;
+.venv/Scripts/python -c &quot;import libsumo; print(libsumo.__version__)&quot;
+
+# --- Linux ---
+sudo add-apt-repository ppa:sumo/stable &amp;&amp; sudo apt update
+sudo apt install -y sumo sumo-tools sumo-doc
+export SUMO_HOME=/usr/share/sumo
+python -m venv .venv &amp;&amp; .venv/bin/pip install eclipse-sumo libsumo traci
+
+# --- run a scenario in-process ---
+.venv/Scripts/python - &lt;&lt;'PY'
+import libsumo as S
+S.start([&quot;sumo&quot;,
+         &quot;-n&quot;, &quot;survey/sumo-rl/sumo_rl/nets/3x3grid/3x3Grid2lanes.net.xml&quot;,
+         &quot;-r&quot;, &quot;survey/bench/broken/g3p3.rou.xml&quot;,
+         &quot;--no-warnings&quot;, &quot;--no-step-log&quot;, &quot;--seed&quot;, &quot;42&quot;, &quot;--time-to-teleport&quot;, &quot;-1&quot;])
+for _ in range(10):
+    S.simulationStep()
+    for tl in S.trafficlight.getIDList():
+        q = [S.lane.getLastStepHaltingNumber(l) for l in S.trafficlight.getControlledLanes(tl)]
+        S.trafficlight.setPhase(tl, 0 if sum(q[: len(q)//2]) &lt;= sum(q[len(q)//2:]) else 1)
+PY
+</code></pre>
+<p><code>--time-to-teleport -1</code> is mandatory for gridlock work: SUMO otherwise teleports
+vehicles out of jams after 300 s and dissolves the phenomenon under study. The
+snippet above was executed here (libsumo 1.28.0, 10 steps, phase write) and returned
+<code>ok 10.0</code>.</p>
+<h4>Fallback if the primary fails</h4>
+<p>Ranked; each is one <code>git checkout</code> away because the observation/action layer is
+written against the traci-compatible surface.</p>
+<ol>
+<li><strong><code>traci</code> + <code>sumo</code> subprocess</strong> (identical API, ~100 steps/s with a 9-agent loop, no
+   in-process constraint, <code>sumo-gui</code> available, multi-process safe). Acceptable for a
+   showcase demo and the GUI path; <strong>re-split the loop</strong>: read queues once per control
+   interval, never per agent per step, or the 9 ms/s returns.</li>
+<li><strong>Docker <code>cityflowproject/cityflow</code></strong> (Linux container; CityFlow's own quick start).
+   Cheapest way to CityFlow <strong>without</strong> a Windows build, and CityFlow's per-step
+   ceiling is above SUMO's — cost is a tail rebuild of the net and route format and
+   the loss of sub-second halting-state granularity.</li>
+<li><strong>Anywhere else given an Ubuntu box</strong>: same libsumo design, no changes.</li>
+</ol>
+<h4>Remaining risks</h4>
+<ul>
+<li>Trust the <em>ratios</em> more than the absolute steps/s (#0.5–1 s). Rerun <code>bench_step.py</code> on
+  the target machine before locking the paper's throughput claims.</li>
+<li>The stock 3×3 asset cannot gridlock; treats <code>survey/bench/broken/g3p2.rou.xml</code> as the
+  baseline scenario, not <code>routes14000.rou.xml</code>.</li>
+<li><code>mvn package</code> for MOSAIC (if ever revisited) on Windows needs Visual C++ build tools;
+  the bundled <code>run.sh</code> will rebuild and fail, a missing runtime JAR otherwise.</li>
+<li>The <code>traci</code> fallback still costs ~9 ms/s of pure IPC per supply one, so the
+  orchestrator cadence must be coarse (≥5 s) and its occupancy scan rate kept separate
+  from the agent update rate.</li>
+</ul>
+<h3>Assets confirmed on disk</h3>
+<p>Both of the following exist locally and were used for the runs above.</p>
+<table>
+<thead>
+<tr>
+<th>purpose</th>
+<th>path</th>
+<th>licence</th>
+<th>notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>dev grid (9 signals)</td>
+<td><code>survey/sumo-rl/sumo_rl/nets/3x3grid/3x3Grid2lanes.net.xml</code> (+ <code>routes14000.rou.xml</code>, <code>3x3grid.sumocfg</code>)</td>
+<td>sumo-rl repo root <code>LICENSE</code> = <strong>MIT</strong> (© 2018 Lucas Alegre)</td>
+<td>net is not itself MIT-licensed separately; 9 TLS, 192 edges, and <strong>right-turn-only movement sets</strong> — the reason custom demand is needed. Single-intersection (<code>nets/simple/</code>, <code>nets/single-intersection/</code>) and 2×2 (<code>nets/2x2grid/</code>) nets also ship, all under the same MIT repo.</td>
+</tr>
+<tr>
+<td>scale-up grid (16 signals)</td>
+<td><code>survey/sumo-rl/sumo_rl/nets/RESCO/grid4x4/grid4x4.net.xml</code> (+ <code>grid4x4_1.rou.xml</code>)</td>
+<td><strong>CC BY-NC-SA 4.0</strong> (<code>sumo-rl/sumo_rl/nets/RESCO/LICENSE</code>, <code>RESCO/grid4x4/LICENSE</code>)</td>
+<td>same file also in <code>survey/resco/resco_benchmark/environments/grid4x4/</code> (CC BY-NC-SA 4.0); <strong>non-commercial</strong>, read again before any commercial use</td>
+</tr>
+<tr>
+<td>gridlock fixture (mine)</td>
+<td><code>survey/bench/broken/g3p2.rou.xml</code>, <code>g3p3.rou.xml</code>, <code>g3p3_hold.rou.xml</code></td>
+<td>n/a (generated here)</td>
+<td>1,500 / 2,000 veh/h turn demand; <code>g3p3_hold</code> releases after a 300 s hold</td>
+</tr>
+</tbody>
+</table>
+<p>Licence stack of <code>survey/resco</code> (Pi-Star-Lab, <code>RESCO v2.0</code>, 2025-10-28): repo <code>LICENSE</code>,
+per-environment <code>LICENSE</code> (CC BY-NC-SA 4.0) — nominally compatible with CC BY-NC-ND
+maps, still all non-commercial. If a commercial license matters for <code>3x3grid</code>, it is
+MIT and portable without the RESCO tree.</p>
+<section class="part" id="arc"><h1 style="break-before:page">Part D — Recommended arc</h1><p>Four design decisions follow from the dossiers. Each is stated here so the open questions at the end have a concrete default behind them, not a blank page.</p>
+<h3>1. One strategic LLM over one fast deterministic executor</h3>
+<p>The naive reading of a per-intersection LLM is that the model sets the light at every decision tick. The measured literature says otherwise. Wherever the split was actually tested, letting a slow model sit above a fast rule beat per-decision LLM control on both quality and latency <sup class="cite"><a href="#ref-34" data-cite="34"></a></sup><sup class="cite"><a href="#ref-13" data-cite="13"></a></sup>. HiLLTS issues district directives every 10–60 s and lets a gap-out rule run every step <sup class="cite"><a href="#ref-34" data-cite="34"></a></sup>. iLLM-TSC's LLM only needs to veto a fast policy to recover nearly all throughput under degradation <sup class="cite"><a href="#ref-13" data-cite="13"></a></sup>.</p>
+<p>Two consequences worth carrying: a second slow LLM hop is <em>not</em> a free improvement (HiLLTS's district layer degraded below its own rule baseline) <sup class="cite"><a href="#ref-34" data-cite="34"></a></sup>, and a bad or missing model turn costs nothing more than falling back to max-pressure.</p>
+<h3>2. Local agents set mode and parameters; the rule executes</h3>
+<p>Agent output is a mode and a small parameter vector per re-plan: a spillback weight, a hysteresis band, a max-green bucket. The executor applies hysteresis, min-green and a spillback discount every tick regardless of model status. The orchestrator is one more writer to the same parameter record, so takeover and hand-back are atomic writes plus a generation number, never a prose handoff.</p>
+<p>This is also what makes the design defensible to a reviewer: the rule floor means the LLM's contribution is measurable as a delta above max-pressure, not as the system itself.</p>
+<h3>3. Orchestrator trigger is detected, not noticed</h3>
+<p>Gridlock is a cycle of blocked arcs. A simulator reports no generic deadlock signal; the queue simply stops draining and demand piles up behind the entries <sup class="cite"><a href="#ref-33" data-cite="33"></a></sup>. Detection therefore has to be an explicit bounded walk over the spillback relation on the orchestrator's side, and the local agent's request can only raise priority — it can never substitute for detection.</p>
+<h3>4. Hand-back is proved, then re-states what it held</h3>
+<p>Hand-back passes through a deterministic gate (spillback depth, queue against a baseline band, drain objective, two clean ticks, lifecycle defaults restored) before control moves. The hand-back message then restates the held constraints verbatim rather than summarising them, because compressed handoffs deactivate upstream constraints in the overwhelming majority of cases <sup class="cite"><a href="#ref-36" data-cite="36"></a></sup>.</p>
+<h3>Unresolved</h3>
+<ol>
+<li><code>simulator_decision.md</code> §A.3. Its endpoints (109 vs 1,705 steps/s) are backed by <code>survey/bench/results.jsonl</code>; the four intermediate lines in the prose (94, 1,388, 1,788, 1,730–1,944) do not appear in the JSONL, whose only runs are at <code>--end 600</code> and <code>--end 900</code>. Listed here rather than silently reproduced as measured.</li>
+<li>18 corpus papers keep their quantifiers only because each is cited once, at its mechanism, in the same section (Part A §1). Any figure quoted elsewhere traces back through that section.</li>
+<li>The stock <code>3x3Grid</code> dev net genuinely cannot gridlock (right-turn-only movements, demand peaking at 40 vehicles), so the gridlock fixture is synthetic demand on a light net. It produced 17–25 blocked edges and 4,529 stranded vehicles, which is enough to exercise an orchestrator, but it is not a calibrated real network.</li>
+<li>The three near-miss papers are compared on abstraction percentage by reading, not by running them. The crowdedness of the supervisor column rests on that reading.</li>
+<li>Every throughput number is from one weak laptop, single-threaded, one seed. Ratios should survive a faster machine; absolutes should be re-run on the target box.</li>
+<li>The latency budget in Part B §2.2 is a model with derived constants, not a measurement.</li>
+<li>Fake-paper hypothesis: none of the twenty-five corpus papers shares a code repository with another, and four of the 2026 preprints use the identical '×Light' naming convention, which can make a literature of one group look like a literature of five.</li>
+</ol>
+<h3>Open questions</h3>
+<ul>
+<li><strong>Coordinated escape.</strong> Which node yields, in what order, and which movement gets sacrificed. Nobody has published an escape order <sup class="cite"><a href="#ref-33" data-cite="33"></a></sup>.</li>
+<li><strong>Bounded wait.</strong> The zone-budget form: an agent may call the model while its budget is positive, and only the orchestrator may take a node below one. The draining argument is sketchable; the arithmetic is not yet derived.</li>
+<li><strong>The hand-back contract itself</strong>, measured: detection latency, recovery time, and how often a near-threshold hand-back re-preempts.</li>
+<li><strong>Cadence versus quality.</strong> A re-plan interval sweep against a fixed-time baseline. HiLLTS puts the parity point near 10–15 s under congestion <sup class="cite"><a href="#ref-34" data-cite="34"></a></sup>; the flat-demand point is unknown.</li>
+<li><strong>Unparsed-turn rate</strong> per model and per prompt. Published failure rates stop at JSON-schema generality and never reach a 2^k traffic action set.</li>
+</ul></section>
+<section class="part" id="bib" style="break-after:page"><h1 style="break-before:page">References</h1><p class="ref" id="ref-1"><span class="num">1.</span> arXiv 1811.11300.</p>
+<p class="ref" id="ref-2"><span class="num">2.</span> arXiv 1903.04527.</p>
+<p class="ref" id="ref-3"><span class="num">3.</span> arXiv 2112.02336.</p>
+<p class="ref" id="ref-4"><span class="num">4.</span> arXiv 2112.10107.</p>
+<p class="ref" id="ref-5"><span class="num">5.</span> arXiv 2210.10453.</p>
+<p class="ref" id="ref-6"><span class="num">6.</span> arXiv 2211.10649.</p>
+<p class="ref" id="ref-7"><span class="num">7.</span> arXiv 2312.16044.</p>
+<p class="ref" id="ref-8"><span class="num">8.</span> arXiv 2401.00211.</p>
+<p class="ref" id="ref-9"><span class="num">9.</span> arXiv 2403.08337.</p>
+<p class="ref" id="ref-10"><span class="num">10.</span> arXiv 2406.12360.</p>
+<p class="ref" id="ref-11"><span class="num">11.</span> arXiv 2406.13693.</p>
+<p class="ref" id="ref-12"><span class="num">12.</span> arXiv 2407.01421.</p>
+<p class="ref" id="ref-13"><span class="num">13.</span> arXiv 2407.06025.</p>
+<p class="ref" id="ref-14"><span class="num">14.</span> arXiv 2411.15100.</p>
+<p class="ref" id="ref-15"><span class="num">15.</span> arXiv 2501.10868.</p>
+<p class="ref" id="ref-16"><span class="num">16.</span> arXiv 2503.11739.</p>
+<p class="ref" id="ref-17"><span class="num">17.</span> arXiv 2505.05258.</p>
+<p class="ref" id="ref-18"><span class="num">18.</span> arXiv 2505.19486.</p>
+<p class="ref" id="ref-19"><span class="num">19.</span> arXiv 2508.02344.</p>
+<p class="ref" id="ref-20"><span class="num">20.</span> arXiv 2508.09678.</p>
+<p class="ref" id="ref-21"><span class="num">21.</span> arXiv 2508.20818.</p>
+<p class="ref" id="ref-22"><span class="num">22.</span> arXiv 2510.26242.</p>
+<p class="ref" id="ref-23"><span class="num">23.</span> arXiv 2511.00136.</p>
+<p class="ref" id="ref-24"><span class="num">24.</span> arXiv 2511.00309.</p>
+<p class="ref" id="ref-25"><span class="num">25.</span> arXiv 2511.19253.</p>
+<p class="ref" id="ref-26"><span class="num">26.</span> arXiv 2601.15816.</p>
+<p class="ref" id="ref-27"><span class="num">27.</span> arXiv 2604.05535.</p>
+<p class="ref" id="ref-28"><span class="num">28.</span> arXiv 2604.05663.</p>
+<p class="ref" id="ref-29"><span class="num">29.</span> arXiv 2604.17456.</p>
+<p class="ref" id="ref-30"><span class="num">30.</span> arXiv 2604.23902.</p>
+<p class="ref" id="ref-31"><span class="num">31.</span> arXiv 2604.25259.</p>
+<p class="ref" id="ref-32"><span class="num">32.</span> arXiv 2606.05304.</p>
+<p class="ref" id="ref-33"><span class="num">33.</span> arXiv 2606.27381.</p>
+<p class="ref" id="ref-34"><span class="num">34.</span> arXiv 2607.22691.</p>
+<p class="ref" id="ref-35"><span class="num">35.</span> arXiv 2608.18263.</p>
+<p class="ref" id="ref-36"><span class="num">36.</span> arXiv 2608.24569.</p>
+<p class="ref" id="ref-37"><span class="num">37.</span> arXiv 2609.22746.</p>
+<p class="ref" id="ref-38"><span class="num">38.</span> arXiv 2609.36934.</p>
+<p class="ref" id="ref-39"><span class="num">39.</span> arXiv 2610.06069.</p>
+<p class="ref" id="ref-40"><span class="num">40.</span> arXiv 2610.31037.</p>
+<p class="ref" id="ref-41"><span class="num">41.</span> arXiv 2610.32280.</p>
+<p class="ref" id="ref-42"><span class="num">42.</span> arXiv 2610.32290.</p></section>
+
+
+<script>
+(() => {
+  // chunk body into fixed-height pages so htmlToPdf paginates exactly where we expect
+  const W = 180, H = 259;                       // mm
+  const pxmm = 96 / 25.4;
+  const cover = document.querySelector(".cover");
+  const tocSec = document.querySelector(".toc");
+  cover.className = "page cover";
+  tocSec.className = "page toc";
+  const holder = document.createElement("div");
+  [...document.body.childNodes].forEach(n => {
+    if (n === cover || n === tocSec) { document.body.removeChild(n); return; }
+    if (n.nodeType === 1 && (n.matches(".folio") || n.tagName === "SCRIPT")) return;
+    holder.appendChild(n);
+  });
+  holder.style.cssText = `width:${W}mm;column-width:${W}mm;column-gap:0;height:${H}mm;
+                          column-fill:auto;`;
+
+  const pageH = H * pxmm, pageW = W * pxmm;
+  const pages = [];
+  let cur = null;
+  const newPage = () => {
+    cur = document.createElement("div");
+    cur.className = "page";
+    document.body.appendChild(cur);
+    pages.push(cur);
+  };
+  pages.push(cover, tocSec); newPage();
+  const HOLDER = holder;
+  const fits = el => {
+    const before = cur.getBoundingClientRect().bottom;
+    const top = el.getBoundingClientRect().top;
+    return (top - before) + el.getBoundingClientRect().height < 2;
+  };
+  // walk leaf blocks in flow order
+  const blocks = [];
+  const walk = n => {
+    for (const c of [...n.children]) {
+      const big = c.querySelector && c.querySelector("pre,table");
+      if (c.matches("pre,table")) { blocks.push(c); continue; }
+      if (c.children.length && !big) { walk(c); }
+      else blocks.push(c);
+    }
+  };
+  walk(holder);
+
+  const placed = [];
+  for (const b of blocks) {
+    cur.appendChild(b);
+    if (b.getBoundingClientRect().bottom - cur.getBoundingClientRect().top > pageH - 4) {
+      // too tall for this page -> move to next
+      newPage();
+      cur.appendChild(b);
+    }
+  }
+
+
+  // outer margin + folio per page
+  for (const [i, pg] of pages.entries()) {
+    if (i > 0) {
+      const f = document.createElement("div");
+      f.className = "folio";
+      f.innerHTML = "<span>TrafficLLM — research report</span><span>" + (i + 1) + "</span>";
+      pg.appendChild(f);
+    }
+  }
+  window.__pages = pages.length; window.__dbg = {pages: pages.length, blocks: blocks.length};
+  window.__ready = true;
+})();
+</script>
+<script>
+(() => {
+  const TOK = "@@";
+  for (const a of document.querySelectorAll("sup.cite a")) {
+    if (a.dataset.cite) a.textContent = TOK + a.dataset.cite + TOK;
+  }
+  const spans = [];
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const victims = [];
+  while (walker.nextNode()) {
+    const n = walker.currentNode;
+    if (n.nodeValue.includes(TOK)) victims.push(n);
+  }
+  for (const n of victims) {
+    const cite = n.parentNode.dataset ? n.parentNode.dataset.cite : null;
+    if (!cite) continue;
+    const frag = document.createDocumentFragment();
+    n.nodeValue.split(TOK).forEach((part, i) => {
+      if (i) { const m = document.createElement("span");
+               m.className = "ctok"; m.dataset.cite = cite;
+               frag.appendChild(m); spans.push(m); }
+      frag.appendChild(document.createTextNode(part));
+    });
+    n.parentNode.replaceChild(frag, n);
+  }
+
+  // print layout: browser scroll px -> physical page (calibrated on this document)
+  const PAGE = 1017.5, OFFSET = 1.46, TOTAL = 25;
+  const phys = el => Math.round((el.getBoundingClientRect().top + scrollY) / PAGE + OFFSET);
+
+  const toc = document.getElementById("toc");
+  const frag = document.createDocumentFragment();
+  let n = 0;
+  for (const h of document.querySelectorAll("section.part > h1")) {
+    n++;
+    h.id = "bd-" + n;
+    const li = document.createElement("li");
+    li.className = "s1";
+    const a = document.createElement("a");
+    a.href = "#bd-" + n;
+    const tEl = document.createElement("span"); tEl.className = "t";
+    tEl.textContent = h.textContent.trim();
+    const d = document.createElement("span"); d.className = "dots";
+    const pg = document.createElement("span"); pg.className = "pg";
+    pg.textContent = phys(h);
+    a.append(tEl, d, pg); li.appendChild(a); frag.appendChild(li);
+    const lead = h.parentElement.querySelector("h2");
+    if (lead) {
+      const li2 = document.createElement("li");
+      li2.className = "s2";
+      const a2 = document.createElement("a");
+      a2.href = "#bd-" + n + "-l";
+      const t2 = document.createElement("span"); t2.className = "t";
+      t2.textContent = lead.textContent.trim();
+      const d2 = document.createElement("span"); d2.className = "dots";
+      const p2 = document.createElement("span"); p2.className = "pg";
+      p2.textContent = phys(lead);
+      a2.append(t2, d2, p2); li2.appendChild(a2); frag.appendChild(li2);
+      lead.id = "bd-" + n + "-l";
+    }
+  }
+  toc.replaceChildren(frag);
+
+  // folio: every page except the cover gets its number
+  const marks = [];
+  for (let p = 1; p <= TOTAL; p++) {
+    const el = document.createElement("span");
+    el.slot = String(p);
+    marks.push({ el, page: p + 1 });
+  }
+  const body = document.body;
+  for (const m of marks) { cell.appendChild(m.el); m.el.textContent = m.page; }
+  document.title = "TrafficLLM report";
+})();
+</script>
+</body></html>

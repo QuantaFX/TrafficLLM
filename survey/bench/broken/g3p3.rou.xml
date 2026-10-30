@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Pressure probe for sumo-rl 3x3Grid2lanes net.
+     Inlet arms are fed hard along the only paths this net allows, so queues
+     meet in the middle and spill back. Run with time to teleport -1. -->
+<routes>
+  <vType id="car" length="5" minGap="2" accel="2.6" decel="4.5" maxSpeed="13.89"/>
+  <flow id="f0" type="car" begin="0" end="5400" vehsPerHour="800" departLane="free" departSpeed="max"><route edges="0Wi 1Wi"/></flow>
+  <flow id="f1" type="car" begin="0" end="5400" vehsPerHour="800" departLane="free" departSpeed="max"><route edges="0Ni 1Wi"/></flow>
+  <flow id="f2" type="car" begin="0" end="5400" vehsPerHour="800" departLane="free" departSpeed="max"><route edges="1Wi 2Wi"/></flow>
+  <flow id="f3" type="car" begin="0" end="5400" vehsPerHour="800" departLane="free" departSpeed="max"><route edges="1Ni 2Wi"/></flow>
+  <flow id="f4" type="car" begin="0" end="5400" vehsPerHour="800" departLane="free" departSpeed="max"><route edges="3Wi 4Wi"/></flow>
+  <flow id="f5" type="car" begin="0" end="5400" vehsPerHour="800" departLane="free" departSpeed="max"><route edges="3Ni 4Wi"/></flow>
+  <flow id="f6" type="car" begin="0" end="5400" vehsPerHour="800" departLane="free" departSpeed="max"><route edges="4Wi 5Wi"/></flow>
+  <flow id="f7" type="car" begin="0" end="5400" vehsPerHour="800" departLane="free" departSpeed="max"><route edges="4Ni 5Wi"/></flow>
+  <flow id="f8" type="car" begin="0" end="5400" vehsPerHour="800" departLane="free" departSpeed="max"><route edges="6Wi 7Wi"/></flow>
+  <flow id="f9" type="car" begin="0" end="5400" vehsPerHour="800" departLane="free" departSpeed="max"><route edges="6Ni 6So"/></flow>
+  <flow id="f10" type="car" begin="0" end="5400" vehsPerHour="800" departLane="free" departSpeed="max"><route edges="7Wi 7So"/></flow>
+  <flow id="f11" type="car" begin="0" end="5400" vehsPerHour="800" departLane="free" departSpeed="max"><route edges="7Ni 7So"/></flow>
+  <flow id="f12" type="car" begin="0" end="5400" vehsPerHour="600" departLane="free" departSpeed="max"><route edges="0Ei 0No"/></flow>
+  <flow id="f13" type="car" begin="0" end="5400" vehsPerHour="600" departLane="free" departSpeed="max"><route edges="1Ei 1No"/></flow>
+  <flow id="f14" type="car" begin="0" end="5400" vehsPerHour="600" departLane="free" departSpeed="max"><route edges="3Ei 3Wo"/></flow>
+  <flow id="f15" type="car" begin="0" end="5400" vehsPerHour="600" departLane="free" departSpeed="max"><route edges="4Ei 7Ni"/></flow>
+  <flow id="f16" type="car" begin="0" end="5400" vehsPerHour="600" departLane="free" departSpeed="max"><route edges="6Ei 6Wo"/></flow>
+  <flow id="f17" type="car" begin="0" end="5400" vehsPerHour="600" departLane="free" departSpeed="max"><route edges="0Si 1Wi"/></flow>
+  <flow id="f18" type="car" begin="0" end="5400" vehsPerHour="600" departLane="free" departSpeed="max"><route edges="3Si 4Wi"/></flow>
+  <flow id="f19" type="car" begin="0" end="5400" vehsPerHour="600" departLane="free" departSpeed="max"><route edges="4Si 5Wi"/></flow>
+</routes>

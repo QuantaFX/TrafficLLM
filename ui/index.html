@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TrafficLLM — Taft Ave / DLSU grid</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="top" class="hud">
+  <div class="brand">
+    <span class="logo">◉</span>
+    <div>
+      <h1>TRAFFIC<span>LLM</span></h1>
+      <p class="sub">Taft Ave · DLSU grid · one LLM agent per intersection</p>
+    </div>
+  </div>
+  <div class="status">
+    <div class="xdot" id="link" data-s="connecting" title="stream"></div>
+    <span id="linktxt">connecting…</span>
+    <span class="clock" id="clock">T+000:00</span>
+  </div>
+  <nav class="controls" id="controls">
+    <button id="btn-pause" title="pause / play (space)">❚❚</button>
+    <div class="speed" id="speed" role="group" aria-label="speed">
+      <button data-s="1">1×</button><button data-s="2" class="on">2×</button><button data-s="4">4×</button><button data-s="8">8×</button>
+    </div>
+    <button id="btn-restart" title="restart episode (R)">⟲ restart</button>
+    <button id="btn-llm" class="llm on" title="LLM agents on/off">LLM on</button>
+    <label class="scen">scenario
+      <select id="scenario">
+        <option value="baseline">baseline</option>
+        <option value="platoon">platoon</option>
+        <option value="gridlock" selected>gridlock</option>
+      </select>
+    </label>
+  </nav>
+</header>
+
+<main id="stage">
+  <div id="mapbox">
+    <svg id="map" xmlns="http://www.w3.org/2000/svg" aria-label="traffic map">
+      <defs>
+        <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="6" stroke="currentColor" stroke-width="2"/>
+        </pattern>
+        <radialGradient id="vign" cx="50%" cy="50%" r="70%">
+          <stop offset="60%" stop-color="#070a0e" stop-opacity="0"/>
+          <stop offset="100%" stop-color="#05070a" stop-opacity=".85"/>
+        </radialGradient>
+        <marker id="arrowhead" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+      <g id="view">
+        <g id="l-blocks"></g>
+        <g id="l-casing"></g>
+        <g id="l-constructor">
+          <g id="l-fill"></g>
+          <g id="l-mark"></g>
+        </g>
+        <g id="l-boxes"></g>
+        <g id="l-cordon"></g>
+        <g id="l-signals"></g>
+        <g id="l-vehicles"></g>
+        <g id="l-hits"></g>
+      </g>
+    </svg>
+    <div class="legend hud">
+      <div class="lg-title">flow</div>
+      <div class="lg-ramp"><i>0</i><b></b><i>100%</i></div>
+      <div class="lg-row"><span class="sw sw-q">∥</span>queued</div>
+      <div class="lg-row"><span class="sw sw-s">▨</span>spillback</div>
+      <div class="lg-row"><span class="sw sw-l">⛓</span>orchestrator lock</div>
+      <div class="lg-row subtle">click a junction to pin its card</div>
+    </div>
+    <div id="wait" class="waiting">
+      <div class="spin"></div>
+      <p><b>waiting for sim</b><span id="waittxt">no stream on ws://localhost:8800/ws — retrying</span></p>
+    </div>
+    <div id="cards"></div>
+    <div id="toasts"></div>
+  </div>
+</main>
+
+<footer class="dock hud">
+  <div class="tabs" id="tabs">
+    <section class="tab" data-tab="agents" id="tab-agents">
+      <button class="chip" aria-expanded="false"><span class="dot"></span>agent thoughts <em id="cnt-int"></em></button>
+      <div class="pane">
+        <div class="pane-h">
+          <h2>agent thoughts</h2>
+          <label class="compact"><input type="checkbox" id="only-nonok"> only failures</label>
+          <button class="x" data-close>×</button>
+        </div>
+        <ol id="feed" class="feed"><li class="empty">no intents yet</li></ol>
+      </div>
+    </section>
+    <section class="tab" data-tab="orch" id="tab-orch">
+      <button class="chip" aria-expanded="false"><span class="dot"></span>orchestrator <em id="cnt-orch"></em></button>
+      <div class="pane">
+        <div class="pane-h"><h2>orchestrator</h2><button class="x" data-close>×</button></div>
+        <div id="orch" class="orch" data-state="idle">
+          <div id="orch-state" class="orch-state">idle — no blocked cycle detected</div>
+          <div id="orch-body" class="orch-body"></div>
+        </div>
+      </div>
+    </section>
+    <section class="tab" data-tab="metrics" id="tab-metrics">
+      <button class="chip" aria-expanded="false"><span class="dot"></span>metrics <em id="cnt-met"></em></button>
+      <div class="pane">
+        <div class="pane-h"><h2>metrics</h2><button class="x" data-close>×</button></div>
+        <div id="metrics" class="metrics"></div>
+      </div>
+    </section>
+  </div>
+</footer>
+
+<div id="tip" class="tip" role="tooltip" hidden></div>
+<script src="ui.js"></script>
+</body>
+</html>
