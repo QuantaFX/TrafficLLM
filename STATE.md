@@ -66,3 +66,10 @@ SUMO lives at `C:\Program Files (x86)\Eclipse\Sumo\bin\sumo.exe`; `SUMO_HOME` mu
 .venv/Scripts/python.exe server.py --port 8800 --ws-port 8801   # UI on :8800
 .venv/Scripts/python.exe -m pytest                              # tests
 ```
+## Asset note
+
+`assets/taft.net.xml` + `assets/demand.rou.xml` are the only files `env/env.py` and `run.py`
+load. `assets/build_demand.py` is the scenario-aware generator (reads `assets/scenarios.json`)
+and is the one to prefer; `assets/gendemand.py` is the simpler fixed-rate fallback that
+produced the committed demand at `--veh 900 --end 2400 --len 8`. Both emit `depart`-sorted
+row files — keep that property.
